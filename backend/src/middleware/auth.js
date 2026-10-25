@@ -55,3 +55,4 @@ export async function authenticateToken(req, res, next) {
 }
 
 export default authenticateToken;
+

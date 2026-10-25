@@ -4,10 +4,6 @@
 -- Features: Strict referential integrity, UTF8MB4 encoding, timestamps
 -- ===================================================================
 
-CREATE DATABASE IF NOT EXISTS medishare
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
 USE medishare;
 
 -- 1. USERS TABLE
@@ -150,3 +146,4 @@ CREATE TABLE IF NOT EXISTS waitlist (
   INDEX idx_waitlist_equipment (equipment_id),
   INDEX idx_waitlist_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

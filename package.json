@@ -9,7 +9,8 @@
     "dev:backend": "npm --prefix backend run dev",
     "start:backend": "npm --prefix backend start",
     "db:migrate": "npm --prefix backend run db:migrate",
-    "db:seed": "npm --prefix backend run db:seed"
+    "db:seed": "npm --prefix backend run db:seed",
+    "db:test": "node backend/scripts/safe_diagnostics.js"
   },
   "keywords": [
     "medical-equipment",

@@ -112,3 +112,4 @@ export const userModel = {
 };
 
 export default userModel;
+

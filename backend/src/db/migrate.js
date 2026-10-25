@@ -13,12 +13,13 @@ async function runMigrations() {
 
   let connection;
   try {
-    // Connect without database first to ensure medishare exists
+    // Connect directly to target database
     connection = await mysql.createConnection({
       host: env.db.host,
       port: env.db.port,
       user: env.db.user,
       password: env.db.password,
+      database: env.db.database,
       multipleStatements: true
     });
 
@@ -59,3 +60,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 }
 
 export { runMigrations };
+

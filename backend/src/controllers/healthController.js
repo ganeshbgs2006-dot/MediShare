@@ -28,3 +28,4 @@ export const healthController = {
 };
 
 export default healthController;
+

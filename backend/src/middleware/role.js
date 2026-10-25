@@ -24,3 +24,4 @@ export function authorizeRoles(...allowedRoles) {
 }
 
 export default authorizeRoles;
+
