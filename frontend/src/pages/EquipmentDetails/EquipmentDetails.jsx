@@ -14,7 +14,8 @@ import {
   HelpCircle,
   Package,
   Layers,
-  Sparkles
+  Sparkles,
+  Star
 } from 'lucide-react';
 import { getEquipmentById } from '../../services/equipmentService';
 import Button from '../../components/common/Button/Button';
@@ -33,8 +34,12 @@ export default function EquipmentDetails() {
   // Retrieve equipment record
   const item = useMemo(() => getEquipmentById(id), [id]);
 
-  // Image fallback state
-  const [imgSrc, setImgSrc] = useState(item?.imageUrl || FALLBACK_SVG);
+  const gallery = useMemo(() => {
+    if (!item) return [];
+    return item.galleryImages && item.galleryImages.length > 0 ? item.galleryImages : [item.imageUrl];
+  }, [item]);
+
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   // Request dialog state
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -79,8 +84,11 @@ export default function EquipmentDetails() {
     conditionDetails,
     knownDamage,
     includedAccessories,
+    checklist,
     ownerName,
     ownerType,
+    ownerRating,
+    reviewCount,
     createdAt
   } = item;
 
@@ -132,10 +140,10 @@ export default function EquipmentDetails() {
           <div className={styles.mediaCol}>
             <div className={styles.mainImageContainer}>
               <img
-                src={imgSrc}
-                alt={name}
+                src={gallery[activeImageIndex] || FALLBACK_SVG}
+                alt={`${name} photo ${activeImageIndex + 1}`}
                 className={styles.mainImage}
-                onError={() => setImgSrc(FALLBACK_SVG)}
+                onError={(e) => { e.target.src = FALLBACK_SVG; }}
               />
               <div className={styles.imageOverlayBadges}>
                 <Badge variant={sharingType} size="md">
@@ -146,6 +154,29 @@ export default function EquipmentDetails() {
                 </Badge>
               </div>
             </div>
+
+            {/* Thumbnail Gallery Strip */}
+            {gallery.length > 1 && (
+              <div className={styles.thumbnailRow} role="tablist" aria-label="Equipment image angles">
+                {gallery.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`${styles.thumbnailBtn} ${activeImageIndex === idx ? styles.activeThumbnail : ''}`}
+                    onClick={() => setActiveImageIndex(idx)}
+                    aria-label={`View photo ${idx + 1} of ${gallery.length}`}
+                    aria-selected={activeImageIndex === idx}
+                  >
+                    <img
+                      src={img}
+                      alt={`${name} thumbnail ${idx + 1}`}
+                      className={styles.thumbnailImg}
+                      onError={(e) => { e.target.src = FALLBACK_SVG; }}
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Quick Inspection Summary Card */}
             <div className={styles.inspectionSummaryCard}>
@@ -238,6 +269,30 @@ export default function EquipmentDetails() {
               </div>
             )}
 
+            {/* Category Physical Inspection Checklist */}
+            {checklist && checklist.length > 0 && (
+              <div className={styles.sectionBlock}>
+                <div className={styles.checklistTitleRow}>
+                  <h3 className={styles.sectionHeading} style={{ marginBottom: 0 }}>Physical Handover Checklist</h3>
+                  <span className={styles.checklistLead}>{checklist.length}-Point Verification</span>
+                </div>
+                <div className={styles.checklistGrid}>
+                  {checklist.map((check, idx) => (
+                    <div key={idx} className={styles.checkCard}>
+                      <div className={styles.checkCardTop}>
+                        <CheckCircle2 size={16} className={styles.checkIconSuccess} aria-hidden="true" />
+                        <strong className={styles.checkItemName}>{check.item}</strong>
+                        <span className={`${styles.checkStatusPill} ${check.status === 'Passed' ? styles.statusPassed : styles.statusReview}`}>
+                          {check.status}
+                        </span>
+                      </div>
+                      <p className={styles.checkNotes}>{check.notes}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Demonstration Owner Profile Box */}
             <div className={styles.ownerProfileCard}>
               <div className={styles.ownerHeader}>
@@ -248,7 +303,15 @@ export default function EquipmentDetails() {
                   <h4 className={styles.ownerName}>{ownerName}</h4>
                   <span className={styles.ownerType}>{ownerType}</span>
                 </div>
-                <span className={styles.demoPartnerTag}>Care Partner</span>
+                {ownerRating ? (
+                  <div className={styles.ownerRatingWrap} title={`Partner Rating: ${ownerRating} out of 5 stars based on ${reviewCount} reviews`}>
+                    <Star size={14} className={styles.ownerStarIcon} fill="#F59E0B" color="#F59E0B" />
+                    <span className={styles.ownerRatingScore}>{ownerRating.toFixed(1)}</span>
+                    <span className={styles.ownerReviewCount}>({reviewCount} reviews)</span>
+                  </div>
+                ) : (
+                  <span className={styles.demoPartnerTag}>Care Partner</span>
+                )}
               </div>
               <p className={styles.ownerDesc}>
                 Verified community equipment partner. Equipment condition logs and handover checklists are recorded at every exchange.

@@ -129,11 +129,12 @@ export default function Home() {
                     className={styles.heroSelect}
                   >
                     <option value="all">All Care Categories</option>
-                    <option value="mobility">Mobility Aids</option>
-                    <option value="respiratory">Respiratory Support</option>
-                    <option value="beds">Hospital Beds</option>
-                    <option value="monitoring">Vital Monitoring</option>
-                    <option value="rehab">Rehabilitation</option>
+                    <option value="Wheelchairs">Wheelchairs</option>
+                    <option value="Mobility Aids & Walkers">Mobility Aids & Walkers</option>
+                    <option value="Hospital Beds">Hospital Beds</option>
+                    <option value="Respiratory Equipment">Respiratory Equipment</option>
+                    <option value="Monitoring Devices">Monitoring Devices</option>
+                    <option value="Other Assistive Equipment">Other Assistive Equipment</option>
                   </select>
                 </div>
 

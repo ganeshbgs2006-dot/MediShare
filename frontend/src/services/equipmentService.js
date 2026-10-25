@@ -133,6 +133,8 @@ export function filterAndSortEquipment({
     results.sort((a, b) => a.price - b.price);
   } else if (sort === 'price-desc') {
     results.sort((a, b) => b.price - a.price);
+  } else if (sort === 'rating-desc') {
+    results.sort((a, b) => (b.ownerRating || 0) - (a.ownerRating || 0));
   }
   // 'default' retains curated featured order
 

@@ -5,6 +5,7 @@ import {
   ShieldCheck,
   ArrowRight,
   Sparkles,
+  Star,
   ClipboardCheck,
   AlertCircle
 } from 'lucide-react';
@@ -42,6 +43,7 @@ export default function EquipmentCard({ item }) {
   const displayLocation = serviceArea || location;
   const displayOwner = ownerName || (owner && (typeof owner === 'string' ? owner : owner.name));
   const displayPrice = price !== undefined ? price : (pricePerDay !== undefined ? pricePerDay : 0);
+  const displayRating = item.ownerRating || (owner && typeof owner === 'object' ? owner.rating : null);
 
   const isAvailable = availabilityStatus === 'available';
 
@@ -128,6 +130,12 @@ export default function EquipmentCard({ item }) {
             <span className={styles.ownerText}>
               Listed by: <strong className={styles.ownerName}>{displayOwner}</strong>
             </span>
+            {displayRating ? (
+              <span className={styles.ratingBadge} title={`Sample rating: ${displayRating} / 5`}>
+                <Star size={11} fill="#F59E0B" color="#F59E0B" aria-hidden="true" />
+                <span>{displayRating}</span>
+              </span>
+            ) : null}
           </div>
         </div>
       </CardBody>

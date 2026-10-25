@@ -51,17 +51,34 @@ export default function Marketplace() {
 
     if (q !== null && q !== searchQuery) setSearchQuery(q);
     if (cat !== null) {
-      // Handle category slug to title mapping if navigated from homepage icons
+      // Handle category slug to canonical category mapping
       const categoryMap = {
-        'mobility': 'Wheelchairs',
-        'respiratory': 'Other Assistive Equipment',
+        'mobility': 'Mobility Aids & Walkers',
+        'mobility aids': 'Mobility Aids & Walkers',
+        'walking frames': 'Mobility Aids & Walkers',
+        'walking aids': 'Mobility Aids & Walkers',
+        'crutches': 'Mobility Aids & Walkers',
+        'wheelchairs': 'Wheelchairs',
+        'respiratory': 'Respiratory Equipment',
+        'respiratory support': 'Respiratory Equipment',
         'beds': 'Hospital Beds',
-        'monitoring': 'Other Assistive Equipment',
-        'rehab': 'Walking Frames & Mobility Aids',
+        'hospital beds': 'Hospital Beds',
+        'monitoring': 'Monitoring Devices',
+        'monitoring devices': 'Monitoring Devices',
+        'vital monitoring': 'Monitoring Devices',
+        'assistive': 'Other Assistive Equipment',
+        'other assistive equipment': 'Other Assistive Equipment',
+        'rehab': 'Mobility Aids & Walkers',
         'pediatric': 'Wheelchairs'
       };
-      const resolvedCat = categoryMap[cat.toLowerCase()] || cat;
-      setSelectedCategory(resolvedCat);
+      const normalized = cat.trim().toLowerCase();
+      const mapped = categoryMap[normalized];
+      if (mapped) {
+        setSelectedCategory(mapped);
+      } else {
+        const found = categories.find((c) => c.toLowerCase() === normalized);
+        setSelectedCategory(found || cat);
+      }
     }
     if (mode !== null && mode !== selectedSharingType) setSelectedSharingType(mode);
     if (avail !== null && avail !== selectedAvailability) setSelectedAvailability(avail);

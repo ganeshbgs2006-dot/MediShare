@@ -116,6 +116,44 @@
   z-index: 2;
 }
 
+/* Thumbnail Gallery Strip */
+.thumbnailRow {
+  display: flex;
+  gap: 0.6rem;
+  overflow-x: auto;
+  padding: 0.2rem 0.1rem;
+  scrollbar-width: thin;
+}
+
+.thumbnailBtn {
+  width: 72px;
+  height: 54px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  border: 2px solid transparent;
+  overflow: hidden;
+  padding: 0;
+  background: var(--slate-100);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.thumbnailBtn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.activeThumbnail {
+  border-color: var(--teal-600);
+  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+}
+
+.thumbnailImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* Inspection Summary Card */
 .inspectionSummaryCard {
   background-color: var(--white);
@@ -327,6 +365,93 @@
   flex-shrink: 0;
 }
 
+/* Category Physical Handover Checklist */
+.checklistTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.checklistLead {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--teal-700);
+  background: var(--teal-50);
+  border: 1px solid var(--teal-200);
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--radius-full);
+}
+
+.checklistGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.checkCard {
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transition: border-color var(--transition-fast);
+}
+
+.checkCard:hover {
+  border-color: var(--teal-300);
+}
+
+.checkCardTop {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkIconSuccess {
+  color: var(--teal-600);
+  flex-shrink: 0;
+}
+
+.checkItemName {
+  font-size: 0.875rem;
+  color: var(--navy-900);
+  font-weight: 600;
+  flex-grow: 1;
+}
+
+.checkStatusPill {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.statusPassed {
+  background: var(--teal-100);
+  color: var(--teal-800);
+}
+
+.statusReview {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.checkNotes {
+  font-size: 0.8125rem;
+  color: var(--slate-600);
+  margin-left: 1.5rem;
+  line-height: 1.45;
+}
+
 /* Owner Profile Card */
 .ownerProfileCard {
   background-color: var(--slate-50);
@@ -366,6 +491,32 @@
   display: block;
   font-size: 0.75rem;
   color: var(--slate-500);
+}
+
+.ownerRatingWrap {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-full);
+}
+
+.ownerStarIcon {
+  flex-shrink: 0;
+}
+
+.ownerRatingScore {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #B45309;
+}
+
+.ownerReviewCount {
+  font-size: 0.75rem;
+  color: #92400E;
 }
 
 .demoPartnerTag {

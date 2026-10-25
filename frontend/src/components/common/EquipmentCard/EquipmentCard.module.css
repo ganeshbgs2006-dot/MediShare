@@ -168,6 +168,21 @@
   color: var(--navy-900);
 }
 
+.ratingBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--navy-900);
+  background-color: var(--slate-100);
+  border: 1px solid var(--slate-200);
+  padding: 0.15rem 0.4rem;
+  border-radius: var(--radius-sm);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 .footer {
   padding: 0.875rem 1.25rem;
   display: flex;

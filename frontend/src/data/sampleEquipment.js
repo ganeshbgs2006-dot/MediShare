@@ -9,36 +9,43 @@ export const SAMPLE_EQUIPMENT_CATEGORIES = [
     id: 'wheelchairs',
     name: 'Wheelchairs',
     categoryName: 'Wheelchairs',
-    description: 'Foldable, lightweight, and pediatric wheelchairs for post-surgical care and mobility recovery.',
+    description: 'Manual, lightweight, and pediatric wheelchairs for mobility recovery and patient transport.',
     iconName: 'Accessibility'
   },
   {
-    id: 'walking-aids',
-    name: 'Walking Frames & Mobility Aids',
-    categoryName: 'Walking Frames & Mobility Aids',
-    description: 'Four-wheel rollators, dual-release folding walkers, and steerable knee recovery scooters.',
+    id: 'mobility-aids',
+    name: 'Mobility Aids & Walkers',
+    categoryName: 'Mobility Aids & Walkers',
+    description: 'Four-wheel rollators, folding walkers, underarm/forearm crutches, and knee scooters.',
     iconName: 'HeartHandshake'
-  },
-  {
-    id: 'crutches',
-    name: 'Crutches',
-    categoryName: 'Crutches',
-    description: 'Push-button adjustable underarm crutches and ergonomic forearm crutches for temporary injury support.',
-    iconName: 'Activity'
   },
   {
     id: 'hospital-beds',
     name: 'Hospital Beds',
     categoryName: 'Hospital Beds',
-    description: 'Semi-Fowler adjustable medical beds and alternating air pressure mattresses for pressure sore care.',
+    description: 'Adjustable medical beds and alternating air pressure mattresses for pressure sore care.',
     iconName: 'Bed'
   },
   {
-    id: 'assistive-devices',
+    id: 'respiratory-equipment',
+    name: 'Respiratory Equipment',
+    categoryName: 'Respiratory Equipment',
+    description: 'Continuous oxygen concentrators, CPAP therapy machines, and respiratory support devices.',
+    iconName: 'Wind'
+  },
+  {
+    id: 'monitoring-devices',
+    name: 'Monitoring Devices',
+    categoryName: 'Monitoring Devices',
+    description: 'Multi-parameter patient vitals monitors, ECG/SpO2 devices, and diagnostic tools.',
+    iconName: 'Activity'
+  },
+  {
+    id: 'other-assistive',
     name: 'Other Assistive Equipment',
     categoryName: 'Other Assistive Equipment',
-    description: 'Continuous flow oxygen concentrators and non-slip medical bathroom shower chairs.',
-    iconName: 'Wind'
+    description: 'Medical shower & bath transfer chairs, daily recovery aids, and hygiene adaptations.',
+    iconName: 'Baby'
   }
 ];
 
