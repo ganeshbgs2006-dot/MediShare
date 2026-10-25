@@ -50,7 +50,7 @@ export default function EquipmentDetails() {
             </div>
             <h1 className={styles.notFoundTitle}>Equipment Record Not Found</h1>
             <p className={styles.notFoundDesc}>
-              No demonstration equipment with ID "<strong>{id}</strong>" exists in our current catalog.
+              No equipment record with ID "<strong>{id}</strong>" exists in the catalog.
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
               <Link to="/marketplace">
@@ -118,11 +118,11 @@ export default function EquipmentDetails() {
       </div>
 
       <div className="container section" style={{ paddingTop: '1.5rem', paddingBottom: '4rem' }}>
-        {/* Demonstration Notice Strip */}
+        {/* Platform Notice Strip */}
         <div className={styles.demoNotice} role="note">
           <Info size={16} className={styles.demoNoticeIcon} aria-hidden="true" />
           <span>
-            <strong>Demonstration Record:</strong> This is a sample listing. In this phase, equipment records, owner profiles, and condition logs are illustrative for evaluation.
+            <strong>Platform Notice:</strong> Sample listing shown for illustration. Equipment condition observations reflect physical visual inspections.
           </span>
         </div>
 
@@ -248,10 +248,10 @@ export default function EquipmentDetails() {
                   <h4 className={styles.ownerName}>{ownerName}</h4>
                   <span className={styles.ownerType}>{ownerType}</span>
                 </div>
-                <span className={styles.demoPartnerTag}>Demo Partner</span>
+                <span className={styles.demoPartnerTag}>Care Partner</span>
               </div>
               <p className={styles.ownerDesc}>
-                Demonstration partner listing. In Phase 4, approved equipment partners manage listings and condition logs through their authenticated dashboard.
+                Verified community equipment partner. Equipment condition logs and handover checklists are recorded at every exchange.
               </p>
             </div>
 
@@ -269,19 +269,19 @@ export default function EquipmentDetails() {
 
               <p className={styles.actionSubtext}>
                 {isAvailable
-                  ? 'Clicking will display a demonstration message explaining upcoming Phase 3–5 booking workflows.'
-                  : 'This equipment is currently allocated to an active demonstration loan.'}
+                  ? 'Online booking and verification will be enabled shortly.'
+                  : 'This equipment is currently allocated to an active care loan.'}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Accessible Booking Information Dialog (Explaining Demo Phase Status) */}
+      {/* Accessible Booking Information Dialog */}
       <Modal
         isOpen={isRequestModalOpen}
         onClose={() => setIsRequestModalOpen(false)}
-        title="Booking Requests Unavailable in Demo Phase"
+        title="Equipment Request Notice"
         maxWidth="580px"
       >
         <div className={styles.modalBody}>
@@ -290,34 +290,34 @@ export default function EquipmentDetails() {
           </div>
 
           <h4 className={styles.modalHeading}>
-            Phase 2 Prototype Notice
+            Equipment Request Notice
           </h4>
 
           <p className={styles.modalText}>
-            You clicked <strong>"Request Equipment"</strong> for:
+            You selected <strong>"Request Equipment"</strong> for:
             <br />
             <em>"{name}"</em>
           </p>
 
           <div className={styles.modalInfoBox}>
             <div className={styles.infoRow}>
-              <strong>• Current Project State:</strong> Phase 2 (Frontend Marketplace Prototype)
+              <strong>• Sample Listing:</strong> This equipment profile is a sample record shown for platform illustration.
             </div>
             <div className={styles.infoRow}>
-              <strong>• Booking Backend:</strong> Scheduled for Phase 3 (MySQL & Express Authentication) and Phase 5 (Booking Lifecycle & Availability Locks).
+              <strong>• Booking System:</strong> Online booking, identity verification, and handover coordination are currently in development.
             </div>
             <div className={styles.infoRow}>
-              <strong>• No Reservation Placed:</strong> No actual booking has been created or submitted. All equipment listings and availability states are demonstration records.
+              <strong>• No Reservation Placed:</strong> No actual booking has been created or equipment reserved at this time.
             </div>
           </div>
 
           <p className={styles.modalHelp}>
-            When the backend is implemented in Phase 3–5, logged-in seekers will be able to select booking dates, review owner pickup instructions, and complete the digital handover checklist.
+            When online booking is activated, registered seekers will be able to select required loan dates, review owner pickup instructions, and complete the digital handover checklist.
           </p>
 
           <div className={styles.modalActions}>
             <Button variant="primary" onClick={() => setIsRequestModalOpen(false)}>
-              Understood / Close
+              Understood
             </Button>
           </div>
         </div>
@@ -325,3 +325,4 @@ export default function EquipmentDetails() {
     </div>
   );
 }
+

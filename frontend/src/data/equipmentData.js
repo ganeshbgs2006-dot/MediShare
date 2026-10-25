@@ -1,7 +1,7 @@
 /**
- * MediShare Demonstration Equipment Dataset
+ * MediShare Equipment Dataset
  *
- * NOTE: For academic demonstration purposes only.
+ * NOTE: Sample listings are shown for illustration and testing.
  * All records, service areas, availability states, and partner profiles are illustrative.
  * Condition records reflect physical visual checks and do not represent biomedical safety certifications.
  */
@@ -64,7 +64,7 @@ export const DEMO_EQUIPMENT_DATA = [
       'Adjustable safety lap belt',
       'Foldable frame carry handles'
     ],
-    ownerName: 'St. Jude Community Health Cell (Demo Partner)',
+    ownerName: 'St. Jude Community Health Cell (Care Partner)',
     ownerType: 'Community Health Clinic',
     isDemoRecord: true,
     createdAt: '2026-10-15T09:00:00Z'
@@ -89,7 +89,7 @@ export const DEMO_EQUIPMENT_DATA = [
       'Washable padded seat cushion',
       'Spoke guard reflectors'
     ],
-    ownerName: 'Metro Health Outreach (Demo Partner)',
+    ownerName: 'Metro Health Outreach (Care Partner)',
     ownerType: 'Non-Profit Care Provider',
     isDemoRecord: true,
     createdAt: '2026-10-18T11:30:00Z'
@@ -115,7 +115,7 @@ export const DEMO_EQUIPMENT_DATA = [
       'Padded 5-point chest harness',
       'Anti-tipper rear caster bars'
     ],
-    ownerName: 'Pediatric Rehabilitation Guild (Demo Partner)',
+    ownerName: 'Pediatric Rehabilitation Guild (Care Partner)',
     ownerType: 'Pediatric Clinic Circle',
     isDemoRecord: true,
     createdAt: '2026-10-02T11:00:00Z'
@@ -140,7 +140,7 @@ export const DEMO_EQUIPMENT_DATA = [
       'Fold-down padded curved backrest',
       'Cane holder clip'
     ],
-    ownerName: 'Greenwood Senior Center (Demo Partner)',
+    ownerName: 'Greenwood Senior Center (Care Partner)',
     ownerType: 'Senior Community Centre',
     isDemoRecord: true,
     createdAt: '2026-10-20T14:15:00Z'
@@ -164,7 +164,7 @@ export const DEMO_EQUIPMENT_DATA = [
       'Pre-installed non-skid rubber feet tips (set of 4)',
       'Side pouch attachment for water bottle'
     ],
-    ownerName: 'Individual Donor Rajesh K. (Demo Listing)',
+    ownerName: 'Individual Donor Rajesh K. (Care Partner)',
     ownerType: 'Individual Community Donor',
     isDemoRecord: true,
     createdAt: '2026-10-10T16:00:00Z'
@@ -189,7 +189,7 @@ export const DEMO_EQUIPMENT_DATA = [
       'Contoured memory foam knee platform cushion',
       'Tool-free height adjustment lock knobs'
     ],
-    ownerName: 'City Recovery Aid Cell (Demo Partner)',
+    ownerName: 'City Recovery Aid Cell (Care Partner)',
     ownerType: 'Recovery Aid Organization',
     isDemoRecord: true,
     createdAt: '2026-10-05T10:00:00Z'
@@ -214,7 +214,7 @@ export const DEMO_EQUIPMENT_DATA = [
       'Ergonomic handgrips (pair)',
       'Heavy-duty non-slip rubber tips (pair)'
     ],
-    ownerName: 'Campus Sports Physical Clinic (Demo Partner)',
+    ownerName: 'Campus Sports Physical Clinic (Care Partner)',
     ownerType: 'Sports & Orthopedic Clinic',
     isDemoRecord: true,
     createdAt: '2026-10-22T08:30:00Z'
@@ -239,7 +239,7 @@ export const DEMO_EQUIPMENT_DATA = [
       'Heavy-duty shock-absorbing flex-rubber tips',
       'Built-in safety night reflectors'
     ],
-    ownerName: 'Rotary Care Volunteer Circle (Demo Partner)',
+    ownerName: 'Rotary Care Volunteer Circle (Care Partner)',
     ownerType: 'Community Volunteer Group',
     isDemoRecord: true,
     createdAt: '2026-10-12T13:45:00Z'
@@ -265,7 +265,7 @@ export const DEMO_EQUIPMENT_DATA = [
       'Telescopic stainless steel IV infusion pole stand',
       'Four 5-inch swivel casters with independent diagonal brakes'
     ],
-    ownerName: 'Hope Elder Foundation (Demo Partner)',
+    ownerName: 'Hope Elder Foundation (Care Partner)',
     ownerType: 'Palliative & Elder Care Foundation',
     isDemoRecord: true,
     createdAt: '2026-10-14T09:20:00Z'
@@ -291,7 +291,7 @@ export const DEMO_EQUIPMENT_DATA = [
       'Emergency puncture patch and adhesive kit',
       'End flap extensions for mattress tuck-in'
     ],
-    ownerName: 'St. Jude Community Health Cell (Demo Partner)',
+    ownerName: 'St. Jude Community Health Cell (Care Partner)',
     ownerType: 'Community Health Clinic',
     isDemoRecord: true,
     createdAt: '2026-10-08T15:10:00Z'
@@ -316,7 +316,7 @@ export const DEMO_EQUIPMENT_DATA = [
       'Grounded AC power cable (10 ft)',
       'New sealed bacterial intake filter'
     ],
-    ownerName: 'Dr. Aris Thorne Outreach (Demo Partner)',
+    ownerName: 'Dr. Aris Thorne Outreach (Care Partner)',
     ownerType: 'Physician Outreach Partner',
     isDemoRecord: true,
     createdAt: '2026-10-19T10:00:00Z'
@@ -341,9 +341,10 @@ export const DEMO_EQUIPMENT_DATA = [
       'Contoured backrest support bar',
       'Wide suction-cup anti-slip rubber feet'
     ],
-    ownerName: 'Caregiver Cooperative (Demo Partner)',
+    ownerName: 'Caregiver Cooperative (Care Partner)',
     ownerType: 'Caregiver Support Group',
     isDemoRecord: true,
     createdAt: '2026-10-21T12:00:00Z'
   }
 ];
+

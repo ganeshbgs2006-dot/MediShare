@@ -16,7 +16,7 @@
     "express",
     "mysql"
   ],
-  "author": "MediShare BCA Team",
+  "author": "MediShare Team",
   "license": "ISC"
 }
 

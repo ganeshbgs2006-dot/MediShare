@@ -14,7 +14,7 @@ import Card, { CardBody, CardFooter } from '../Card/Card';
 import styles from './EquipmentCard.module.css';
 
 // Crisp, self-contained SVG fallback in case network image cannot be retrieved
-const FALLBACK_SVG = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'%3E%3Crect width='600' height='400' fill='%23F1F5F9'/%3E%3Ccircle cx='300' cy='180' r='60' fill='%23CCFBF1'/%3E%3Cpath d='M300 150v60M270 180h60' stroke='%230D9488' stroke-width='8' stroke-linecap='round'/%3E%3Ctext x='300' y='280' font-family='sans-serif' font-size='18' font-weight='600' fill='%23475569' text-anchor='middle'%3EMedical Assistive Equipment%3C/text%3E%3Ctext x='300' y='305' font-family='sans-serif' font-size='13' fill='%2394A3B8' text-anchor='middle'%3EMediShare Demonstration Record%3C/text%3E%3C/svg%3E";
+const FALLBACK_SVG = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'%3E%3Crect width='600' height='400' fill='%23F1F5F9'/%3E%3Ccircle cx='300' cy='180' r='60' fill='%23CCFBF1'/%3E%3Cpath d='M300 150v60M270 180h60' stroke='%230D9488' stroke-width='8' stroke-linecap='round'/%3E%3Ctext x='300' y='280' font-family='sans-serif' font-size='18' font-weight='600' fill='%23475569' text-anchor='middle'%3EMedical Assistive Equipment%3C/text%3E%3Ctext x='300' y='305' font-family='sans-serif' font-size='13' fill='%2394A3B8' text-anchor='middle'%3EMediShare Sample Listing%3C/text%3E%3C/svg%3E";
 
 export default function EquipmentCard({ item }) {
   const [imgSrc, setImgSrc] = useState(item.imageUrl || FALLBACK_SVG);
@@ -89,8 +89,8 @@ export default function EquipmentCard({ item }) {
           </Badge>
         </div>
 
-        {/* Demonstration Tag Watermark */}
-        <span className={styles.demoWatermark}>Demo Listing</span>
+        {/* Sample Listing Tag */}
+        <span className={styles.demoWatermark}>Sample Listing</span>
       </div>
 
       <CardBody className={styles.body}>

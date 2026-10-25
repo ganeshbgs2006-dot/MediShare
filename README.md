@@ -1,8 +1,5 @@
 # MediShare — Community Medical Equipment Sharing Platform
 
-> **Academic Capstone Project**  
-> Developed using React, Vite, Node.js, Express.js, and MySQL.
-
 MediShare is a community-driven healthcare technology web application designed to connect recovering patient families with verified equipment owners, local clinics, and non-profit health organizations. MediShare coordinates access to vital medical devices (such as wheelchairs, oxygen concentrators, hospital beds, and vital sign monitors) through free community lending, non-profit care rentals, and equipment donations.
 
 ---
@@ -12,7 +9,7 @@ MediShare is a community-driven healthcare technology web application designed t
 1. **Patient Safety & Transparency**: Mandatory dual-stage digital condition checklists (handover and return) with photographic and video evidence.
 2. **Owner Verification & Moderation**: Newly registered owners undergo administrative verification before listings can be published.
 3. **Equitable Community Allocation**: Priority algorithms and waitlists prevent hoarding or commercial exploitation.
-4. **Demonstration Integrity**: Clear labeling of all sample records to prevent misleading medical claims during academic evaluation.
+4. **Demonstration Integrity**: Clear labeling of all sample records to maintain transparency prior to real-world deployment.
 
 ---
 

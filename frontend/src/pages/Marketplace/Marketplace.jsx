@@ -131,11 +131,11 @@ export default function Marketplace() {
               Browse assistive devices, wheelchairs, hospital beds, and recovery aids shared by verified local owners, clinics, and community members.
             </p>
 
-            {/* Demonstration Transparency Banner */}
+            {/* Transparency Notice */}
             <div className={styles.demoNoticeCard} role="note">
               <Info size={18} className={styles.demoNoticeIcon} aria-hidden="true" />
               <div>
-                <strong>Demonstration Catalog:</strong> All equipment records, availability states, and partner listings displayed on this page are sample demonstration data for testing the MediShare platform.
+                <strong>Platform Notice:</strong> Sample equipment listings, availability states, and partner profiles are shown for illustration.
               </div>
             </div>
           </div>
@@ -324,7 +324,7 @@ export default function Marketplace() {
             {/* Results Count & Active Filter Pills Bar */}
             <div className={styles.resultsHeaderBar}>
               <span className={styles.resultsCount}>
-                Showing <strong>{filteredEquipment.length}</strong> demonstration {filteredEquipment.length === 1 ? 'item' : 'items'}
+                Showing <strong>{filteredEquipment.length}</strong> {filteredEquipment.length === 1 ? 'item' : 'items'}
               </span>
 
               {isFiltered && (
@@ -395,7 +395,7 @@ export default function Marketplace() {
                 </div>
                 <h3 className={styles.emptyTitle}>No matching equipment found</h3>
                 <p className={styles.emptyDesc}>
-                  We could not find any demonstration medical equipment matching your current search criteria:
+                  We could not find any medical equipment matching your current search criteria:
                 </p>
                 <div className={styles.emptyCriteriaBox}>
                   {searchQuery && <div>• Keyword: "<strong>{searchQuery}</strong>"</div>}
@@ -422,3 +422,4 @@ export default function Marketplace() {
     </div>
   );
 }
+

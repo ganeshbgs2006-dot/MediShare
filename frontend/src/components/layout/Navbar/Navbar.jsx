@@ -22,11 +22,11 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Non-production sample data disclaimer banner */}
-      <div className={styles.topNotice} role="region" aria-label="Demonstration Notice">
+      {/* Transparency notice for sample demonstration data */}
+      <div className={styles.topNotice} role="region" aria-label="Platform Notice">
         <div className={styles.noticeContent}>
           <Info size={14} className={styles.noticeIcon} aria-hidden="true" />
-          <span>MediShare Demo — Sample listings shown for demonstration.</span>
+          <span>MediShare — Sample listings are shown for illustration.</span>
         </div>
       </div>
 

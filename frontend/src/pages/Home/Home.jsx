@@ -246,7 +246,7 @@ export default function Home() {
               <span className="badge-pill">Verified Showcase</span>
               <h2>Featured Community Equipment</h2>
               <p>
-                Browse representative demonstration devices currently listed in the local network.
+                Browse representative devices currently listed in the local network. Sample listings are shown for illustration.
               </p>
             </div>
 
@@ -298,7 +298,7 @@ export default function Home() {
           <div className={styles.viewAllRow}>
             <Link to="/marketplace">
               <Button variant="secondary" size="lg" rightIcon={<ArrowRight size={18} />}>
-                Explore All Demonstration Equipment in Marketplace
+                Explore All Available Equipment in Marketplace
               </Button>
             </Link>
           </div>

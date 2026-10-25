@@ -1,6 +1,6 @@
 /**
- * Sample Medical Equipment Demonstration Dataset
- * NOTE: For academic and demonstration purposes only.
+ * MediShare Sample Equipment Dataset
+ * NOTE: Sample listings are shown for illustration and testing.
  * No real user data, medical claims, or actual item availability is implied.
  */
 

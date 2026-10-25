@@ -86,17 +86,6 @@
   max-width: 360px;
 }
 
-.academicBadge {
-  display: inline-block;
-  background-color: var(--navy-850);
-  border: 1px solid var(--navy-700);
-  color: var(--teal-400);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-sm);
-}
-
 .colTitle {
   font-size: 0.9375rem;
   font-weight: 700;

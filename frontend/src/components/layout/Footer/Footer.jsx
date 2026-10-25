@@ -50,9 +50,6 @@ export default function Footer() {
               A community-driven healthcare equipment network connecting patient families with verified owners.
               Democratizing medical recovery through secure lending, donation, and non-commercial rentals.
             </p>
-            <div className={styles.academicBadge}>
-              <span>BCA Academic Capstone Project</span>
-            </div>
           </div>
 
           {/* Categories */}
@@ -93,12 +90,12 @@ export default function Footer() {
 
         {/* Important Health & Regulatory Disclaimer Box */}
         <div className={styles.disclaimerBox}>
-          <strong>Regulatory & Safety Notice:</strong> MediShare is a community peer-to-peer equipment sharing coordination tool. Listings, condition checklists, and owner approvals do not constitute medical certification, professional biomedical safety endorsement, or formal healthcare device licensure. Users are strongly advised to inspect all devices prior to use and consult certified healthcare professionals regarding device clinical appropriateness. All records shown are for academic demonstration.
+          <strong>Regulatory & Safety Notice:</strong> MediShare is a community peer-to-peer equipment sharing coordination tool. Listings, condition checklists, and owner approvals do not constitute medical certification, professional biomedical safety endorsement, or formal healthcare device licensure. Users are strongly advised to inspect all devices prior to use and consult certified healthcare professionals regarding device clinical appropriateness. Sample equipment listings are shown for illustration.
         </div>
 
         {/* Bottom Bar */}
         <div className={styles.bottomBar}>
-          <p>© {currentYear} MediShare Community Health Network. Built with React, Node.js, Express & MySQL.</p>
+          <p>© {currentYear} MediShare Community Health Network. All rights reserved.</p>
           <div className={styles.bottomLinks}>
             <a href="#privacy">Privacy Policy</a>
             <span className={styles.dot}>•</span>
