@@ -32,6 +32,60 @@ async function runMigrations() {
 
     console.log('[MIGRATE] Schema created / verified successfully.');
 
+    // Helper to safely add column if not existing in MySQL
+    async function addCol(tableName, colName, colDef) {
+      const [exists] = await connection.query(
+        `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+        [env.db.database, tableName, colName]
+      );
+      if (exists.length === 0) {
+        await connection.query(`ALTER TABLE \`${tableName}\` ADD COLUMN \`${colName}\` ${colDef}`);
+        console.log(`[MIGRATE] Added column '${colName}' to table '${tableName}'`);
+      }
+    }
+
+    // 1. Users table enhancements
+    await addCol('users', 'is_active', 'BOOLEAN NOT NULL DEFAULT 1 AFTER is_verified');
+    await addCol('users', 'status_reason', 'VARCHAR(255) NULL AFTER is_active');
+
+    // 2. Equipment table enhancements
+    await addCol('equipment', 'moderation_status', "ENUM('pending', 'approved', 'rejected', 'flagged') NOT NULL DEFAULT 'approved' AFTER availability_status");
+    await addCol('equipment', 'moderation_reason', 'TEXT NULL AFTER moderation_status');
+
+    // 3. Bookings table enhancements
+    await addCol('bookings', 'seeker_message', 'TEXT NULL AFTER handover_notes');
+    await addCol('bookings', 'rejection_reason', 'TEXT NULL AFTER seeker_message');
+    await addCol('bookings', 'cancellation_reason', 'TEXT NULL AFTER rejection_reason');
+
+    // 4. Audit logs table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        admin_id INT NOT NULL,
+        action VARCHAR(100) NOT NULL,
+        entity_type ENUM('user', 'equipment', 'booking', 'system') NOT NULL,
+        entity_id INT NOT NULL,
+        old_value JSON NULL,
+        new_value JSON NULL,
+        reason TEXT NULL,
+        ip_address VARCHAR(45) NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE,
+        INDEX idx_audit_admin (admin_id),
+        INDEX idx_audit_entity (entity_type, entity_id),
+        INDEX idx_audit_created (created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+    console.log('[MIGRATE] Verified audit_logs table.');
+
+    // 5. Seed equipment if empty
+    try {
+      const { seedEquipment } = await import('./seedEquipment.js');
+      await seedEquipment();
+    } catch (seedErr) {
+      console.warn('[MIGRATE] Equipment seed notice:', seedErr.message);
+    }
+
     // Verify created tables
     await connection.query(`USE \`${env.db.database}\`;`);
     const [tables] = await connection.query('SHOW TABLES;');

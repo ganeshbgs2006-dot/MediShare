@@ -9,7 +9,9 @@ import {
   ShieldCheck,
   User,
   Info,
-  LogOut
+  LogOut,
+  Calendar,
+  Layers
 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import Button from '../../common/Button/Button';
@@ -55,6 +57,38 @@ export default function Navbar() {
               <Search size={16} />
               <span>Browse Equipment</span>
             </Link>
+
+            {/* Role-specific Quick Links */}
+            {isAuthenticated && user?.role === 'seeker' && (
+              <Link
+                to="/my-bookings"
+                className={`${styles.navLink} ${location.pathname === '/my-bookings' ? styles.active : ''}`}
+              >
+                <Calendar size={16} />
+                <span>My Requests</span>
+              </Link>
+            )}
+
+            {isAuthenticated && (user?.role === 'owner' || user?.role === 'admin') && (
+              <Link
+                to="/owner/bookings"
+                className={`${styles.navLink} ${location.pathname === '/owner/bookings' ? styles.active : ''}`}
+              >
+                <Calendar size={16} />
+                <span>Partner Queue</span>
+              </Link>
+            )}
+
+            {isAuthenticated && user?.role === 'admin' && (
+              <Link
+                to="/admin"
+                className={`${styles.navLink} ${location.pathname === '/admin' ? styles.active : ''}`}
+              >
+                <ShieldCheck size={16} />
+                <span>Admin Console</span>
+              </Link>
+            )}
+
             <a href="/#how-it-works" className={styles.navLink}>
               <span>How It Works</span>
             </a>
@@ -132,6 +166,28 @@ export default function Navbar() {
               <Search size={18} />
               <span>Browse Equipment</span>
             </Link>
+
+            {isAuthenticated && user?.role === 'seeker' && (
+              <Link to="/my-bookings" className={styles.mobileLink} onClick={closeMobileMenu}>
+                <Calendar size={18} />
+                <span>My Requests</span>
+              </Link>
+            )}
+
+            {isAuthenticated && (user?.role === 'owner' || user?.role === 'admin') && (
+              <Link to="/owner/bookings" className={styles.mobileLink} onClick={closeMobileMenu}>
+                <Calendar size={18} />
+                <span>Partner Queue</span>
+              </Link>
+            )}
+
+            {isAuthenticated && user?.role === 'admin' && (
+              <Link to="/admin" className={styles.mobileLink} onClick={closeMobileMenu}>
+                <ShieldCheck size={18} />
+                <span>Admin Console</span>
+              </Link>
+            )}
+
             <a href="/#how-it-works" className={styles.mobileLink} onClick={closeMobileMenu}>
               <span>How It Works</span>
             </a>
@@ -142,6 +198,7 @@ export default function Navbar() {
             <a href="/#impact" className={styles.mobileLink} onClick={closeMobileMenu}>
               <span>Community Impact</span>
             </a>
+
             <div className={styles.mobileActions}>
               {isAuthenticated ? (
                 <>

@@ -16,6 +16,8 @@ export const userModel = {
         organization_name, 
         service_area, 
         is_verified, 
+        is_active,
+        status_reason,
         created_at, 
         updated_at
       FROM users 
@@ -40,6 +42,8 @@ export const userModel = {
         organization_name, 
         service_area, 
         is_verified, 
+        is_active,
+        status_reason,
         created_at, 
         updated_at
       FROM users 
@@ -108,6 +112,107 @@ export const userModel = {
     const sql = `UPDATE users SET is_verified = 1 WHERE id = ?`;
     await query(sql, [id]);
     return this.findById(id);
+  },
+
+  /**
+   * Update active status of an account (Suspend or Reactivate)
+   */
+  async updateStatus(id, isActive, reason = null) {
+    const sql = `UPDATE users SET is_active = ?, status_reason = ? WHERE id = ?`;
+    await query(sql, [isActive ? 1 : 0, reason, id]);
+    return this.findById(id);
+  },
+
+  /**
+   * List users with search, role filtering, status filtering, and pagination for Admin Dashboard
+   */
+  async listUsers({ role = null, status = null, search = '', limit = 20, offset = 0 } = {}) {
+    const conditions = [];
+    const params = [];
+
+    if (role && role !== 'all') {
+      conditions.push('role = ?');
+      params.push(role);
+    }
+
+    if (status && status !== 'all') {
+      if (status === 'active') {
+        conditions.push('is_active = 1');
+      } else if (status === 'suspended') {
+        conditions.push('is_active = 0');
+      }
+    }
+
+    if (search && search.trim()) {
+      conditions.push('(full_name LIKE ? OR email LIKE ? OR organization_name LIKE ?)');
+      const pattern = `%${search.trim()}%`;
+      params.push(pattern, pattern, pattern);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const sql = `
+      SELECT 
+        id, 
+        full_name, 
+        email, 
+        phone, 
+        role, 
+        organization_name, 
+        service_area, 
+        is_verified, 
+        is_active,
+        status_reason,
+        created_at, 
+        updated_at
+      FROM users
+      ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    params.push(Number(limit), Number(offset));
+    return query(sql, params);
+  },
+
+  /**
+   * Count users matching filter conditions
+   */
+  async countUsers({ role = null, status = null, search = '' } = {}) {
+    const conditions = [];
+    const params = [];
+
+    if (role && role !== 'all') {
+      conditions.push('role = ?');
+      params.push(role);
+    }
+
+    if (status && status !== 'all') {
+      if (status === 'active') {
+        conditions.push('is_active = 1');
+      } else if (status === 'suspended') {
+        conditions.push('is_active = 0');
+      }
+    }
+
+    if (search && search.trim()) {
+      conditions.push('(full_name LIKE ? OR email LIKE ? OR organization_name LIKE ?)');
+      const pattern = `%${search.trim()}%`;
+      params.push(pattern, pattern, pattern);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const sql = `SELECT COUNT(*) AS total FROM users ${whereClause}`;
+    const rows = await query(sql, params);
+    return rows[0].total;
+  },
+
+  /**
+   * Count active admins in system to prevent locking out the last admin
+   */
+  async countActiveAdmins() {
+    const sql = `SELECT COUNT(*) AS total FROM users WHERE role = 'admin' AND is_active = 1`;
+    const rows = await query(sql);
+    return rows[0].total;
   }
 };
 

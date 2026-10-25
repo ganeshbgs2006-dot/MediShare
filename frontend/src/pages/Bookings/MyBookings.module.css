@@ -1,0 +1,241 @@
+.container {
+  padding-top: 2rem;
+  padding-bottom: 4rem;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--navy-900);
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: var(--slate-600);
+  font-size: 1rem;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.statCard {
+  background: #ffffff;
+  border-radius: var(--radius-lg, 12px);
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--slate-200);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.statLabel {
+  font-size: 0.8125rem;
+  color: var(--slate-500);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+}
+
+.statValue {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--navy-900);
+}
+
+.filterTabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--slate-200);
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+}
+
+.tabBtn {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  border: 1px solid var(--slate-200);
+  background: #ffffff;
+  color: var(--slate-600);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tabBtn:hover {
+  background: var(--slate-50);
+  color: var(--slate-900);
+}
+
+.tabBtnActive {
+  background: var(--teal-600);
+  color: #ffffff;
+  border-color: var(--teal-600);
+}
+
+.tabBtnActive:hover {
+  background: var(--teal-700);
+  color: #ffffff;
+}
+
+.bookingList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.bookingCard {
+  background: #ffffff;
+  border-radius: var(--radius-lg, 12px);
+  border: 1px solid var(--slate-200);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bookingCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: var(--slate-50);
+  border-bottom: 1px solid var(--slate-200);
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.reference {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--navy-900);
+  font-family: monospace;
+}
+
+.createdAt {
+  font-size: 0.8125rem;
+  color: var(--slate-500);
+}
+
+.cardBody {
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .cardBody {
+    grid-template-columns: 1fr;
+  }
+}
+
+.itemImage {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--slate-200);
+}
+
+.itemDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.itemName {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--navy-900);
+  margin-bottom: 0.25rem;
+}
+
+.metaRow {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+  color: var(--slate-600);
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.messageBox {
+  background: var(--slate-50);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.875rem;
+  color: var(--slate-700);
+  border-left: 3px solid var(--teal-500);
+}
+
+.handoverBox {
+  background: #f0fdf4;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.875rem;
+  color: #166534;
+  border-left: 3px solid #22c55e;
+}
+
+.alertBox {
+  background: #fef2f2;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.875rem;
+  color: #991b1b;
+  border-left: 3px solid #ef4444;
+}
+
+.cardFooter {
+  padding: 1rem 1.5rem;
+  background: #ffffff;
+  border-top: 1px solid var(--slate-100);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: #ffffff;
+  border-radius: var(--radius-lg, 12px);
+  border: 1px dashed var(--slate-300);
+}
+
+.emptyIcon {
+  color: var(--slate-400);
+  margin-bottom: 1rem;
+}
+
+.emptyTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--navy-900);
+  margin-bottom: 0.5rem;
+}
+
+.emptySubtitle {
+  color: var(--slate-500);
+  margin-bottom: 1.5rem;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}

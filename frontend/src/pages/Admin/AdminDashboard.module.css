@@ -1,0 +1,274 @@
+.container {
+  padding-top: 2rem;
+  padding-bottom: 5rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.titleArea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--navy-900);
+}
+
+.subtitle {
+  color: var(--slate-600);
+  font-size: 1rem;
+}
+
+.adminBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--teal-50);
+  color: var(--teal-700);
+  border: 1px solid var(--teal-200);
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.tabBar {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid var(--slate-200);
+  margin-bottom: 2rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.tabItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--slate-600);
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -0.25rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tabItem:hover {
+  color: var(--navy-900);
+}
+
+.tabItemActive {
+  color: var(--teal-600);
+  border-bottom-color: var(--teal-600);
+}
+
+/* Metrics Section */
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2.5rem;
+}
+
+.metricCard {
+  background: #ffffff;
+  border-radius: var(--radius-lg, 12px);
+  padding: 1.5rem;
+  border: 1px solid var(--slate-200);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.metricTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.metricIconWrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metricLabel {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--slate-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metricValue {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--navy-900);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.metricSubtext {
+  font-size: 0.8125rem;
+  color: var(--slate-500);
+}
+
+.twoColGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+@media (max-width: 900px) {
+  .twoColGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tableCard {
+  background: #ffffff;
+  border-radius: var(--radius-lg, 12px);
+  border: 1px solid var(--slate-200);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.tableHeader {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--slate-200);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.tableTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--navy-900);
+}
+
+.tableFilterBar {
+  padding: 1rem 1.5rem;
+  background: var(--slate-50);
+  border-bottom: 1px solid var(--slate-200);
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filterInput {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--slate-300);
+  font-size: 0.875rem;
+}
+
+.filterSelect {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--slate-300);
+  font-size: 0.875rem;
+  background: #ffffff;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.dataTable th {
+  background: var(--slate-50);
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  color: var(--slate-700);
+  border-bottom: 1px solid var(--slate-200);
+  white-space: nowrap;
+}
+
+.dataTable td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--slate-100);
+  color: var(--slate-800);
+  vertical-align: middle;
+}
+
+.dataTable tr:hover td {
+  background: #f8fafc;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.statusActive {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.statusSuspended {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.statusApproved {
+  background: #ccfbf1;
+  color: #0f766e;
+}
+
+.statusPending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.statusFlagged {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.statusRejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.actionBtns {
+  display: flex;
+  gap: 0.5rem;
+}

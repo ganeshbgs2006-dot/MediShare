@@ -47,6 +47,15 @@ export async function authenticateToken(req, res, next) {
       });
     }
 
+    // Verify account is active
+    if (!user.is_active) {
+      return res.status(403).json({
+        success: false,
+        error: 'Your account has been deactivated or suspended: ' + (user.status_reason || 'Please contact platform administration.'),
+        code: 'ACCOUNT_SUSPENDED'
+      });
+    }
+
     req.user = user;
     next();
   } catch (err) {
