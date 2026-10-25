@@ -1,0 +1,195 @@
+.footer {
+  background-color: var(--navy-950);
+  color: var(--slate-300);
+  margin-top: auto;
+  border-top: 1px solid var(--navy-800);
+}
+
+.trustStrip {
+  background-color: var(--navy-900);
+  border-bottom: 1px solid var(--navy-850);
+  padding: 2.25rem 0;
+}
+
+.trustGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.trustItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.trustIcon {
+  color: var(--teal-400);
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+}
+
+.trustTitle {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 0.25rem;
+}
+
+.trustDesc {
+  font-size: 0.8125rem;
+  color: var(--slate-400);
+  line-height: 1.5;
+}
+
+.mainContent {
+  padding-top: 4rem;
+  padding-bottom: 2.5rem;
+}
+
+.footerGrid {
+  display: grid;
+  grid-template-columns: 2fr 1.25fr 1.25fr 1fr;
+  gap: 3rem;
+  margin-bottom: 3rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.logoIcon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--teal-600), var(--teal-700));
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brandTitle {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: -0.02em;
+}
+
+.brandMission {
+  font-size: 0.875rem;
+  color: var(--slate-400);
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
+  max-width: 360px;
+}
+
+.academicBadge {
+  display: inline-block;
+  background-color: var(--navy-850);
+  border: 1px solid var(--navy-700);
+  color: var(--teal-400);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-sm);
+}
+
+.colTitle {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.linkList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.linkList a {
+  font-size: 0.875rem;
+  color: var(--slate-400);
+  transition: color var(--transition-fast);
+}
+
+.linkList a:hover {
+  color: var(--teal-400);
+}
+
+.disclaimerBox {
+  background-color: rgba(15, 23, 42, 0.75);
+  border: 1px solid var(--navy-800);
+  border-left: 4px solid var(--amber-500);
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: var(--slate-400);
+  line-height: 1.6;
+  margin-bottom: 2.5rem;
+}
+
+.disclaimerBox strong {
+  color: var(--amber-400);
+}
+
+.bottomBar {
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--navy-800);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.8125rem;
+  color: var(--slate-500);
+}
+
+.bottomLinks {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bottomLinks a {
+  color: var(--slate-400);
+  font-size: 0.8125rem;
+}
+
+.bottomLinks a:hover {
+  color: var(--teal-400);
+}
+
+.dot {
+  color: var(--slate-600);
+}
+
+@media (max-width: 992px) {
+  .trustGrid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .footerGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .footerGrid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .bottomBar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

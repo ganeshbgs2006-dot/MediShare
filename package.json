@@ -1,0 +1,21 @@
+{
+  "name": "medishare",
+  "version": "1.0.0",
+  "description": "MediShare — Community Medical Equipment Sharing Platform",
+  "scripts": {
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "preview:frontend": "npm --prefix frontend run preview"
+  },
+  "keywords": [
+    "medical-equipment",
+    "healthcare",
+    "sharing-economy",
+    "react",
+    "vite",
+    "express",
+    "mysql"
+  ],
+  "author": "MediShare BCA Team",
+  "license": "ISC"
+}

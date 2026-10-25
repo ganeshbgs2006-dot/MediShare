@@ -1,0 +1,40 @@
+.card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all var(--transition-normal);
+}
+
+.bordered {
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-xs);
+}
+
+.hoverable:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--teal-200);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.body {
+  padding: 1.5rem;
+  flex: 1;
+}
+
+.footer {
+  padding: 1rem 1.5rem;
+  background-color: var(--slate-50);
+  border-top: 1px solid var(--border-color);
+  margin-top: auto;
+}

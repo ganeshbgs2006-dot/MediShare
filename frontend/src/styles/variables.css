@@ -1,0 +1,99 @@
+:root {
+  /* Brand Navy Colors */
+  --navy-950: #060D17;
+  --navy-900: #0B192C;
+  --navy-850: #112239;
+  --navy-800: #1E293B;
+  --navy-700: #334155;
+  --navy-600: #475569;
+
+  /* Healthcare Teal & Mint Accents */
+  --teal-900: #134E4A;
+  --teal-800: #115E59;
+  --teal-700: #0F766E;
+  --teal-600: #0D9488;
+  --teal-500: #14B8A6;
+  --teal-400: #2DD4BF;
+  --teal-200: #99F6E4;
+  --teal-100: #CCFBF1;
+  --teal-50: #F0FDFA;
+
+  /* Accent Trust Greens */
+  --green-800: #065F46;
+  --green-700: #047857;
+  --green-600: #059669;
+  --green-500: #10B981;
+  --green-100: #D1FAE5;
+  --green-50: #ECFDF5;
+
+  /* Status Colors */
+  --amber-700: #B45309;
+  --amber-600: #D97706;
+  --amber-500: #F59E0B;
+  --amber-100: #FEF3C7;
+  --amber-50: #FFFBEB;
+
+  --rose-700: #BE123C;
+  --rose-600: #E11D48;
+  --rose-500: #F43F5E;
+  --rose-100: #FFE4E6;
+  --rose-50: #FFF1F2;
+
+  --blue-700: #1D4ED8;
+  --blue-600: #2563EB;
+  --blue-100: #DBEAFE;
+  --blue-50: #EFF6FF;
+
+  /* Neutral Slate Palette */
+  --slate-900: #0F172A;
+  --slate-800: #1E293B;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --slate-500: #64748B;
+  --slate-400: #94A3B8;
+  --slate-300: #CBD5E1;
+  --slate-200: #E2E8F0;
+  --slate-100: #F1F5F9;
+  --slate-50: #F8FAFC;
+  --white: #FFFFFF;
+
+  /* Semantic UI Tokens */
+  --bg-app: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --bg-subtle: #F1F5F9;
+  --border-color: #E2E8F0;
+  --border-focus: #0D9488;
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+  --text-light: #94A3B8;
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Elevation Shadows */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.06);
+
+  /* Border Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-full: 9999px;
+
+  /* Layout Containers */
+  --container-max: 1240px;
+  --container-narrow: 960px;
+  --header-height: 72px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
