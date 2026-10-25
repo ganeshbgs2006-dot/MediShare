@@ -1,12 +1,25 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
 import { env } from './config/env.js';
 import apiRoutes from './routes/index.js';
 import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler.js';
+import { securityHeaders } from './middleware/securityHeaders.js';
+import { standardRateLimiter, authRateLimiter, exportRateLimiter } from './middleware/rateLimiter.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// 1. CORS Configuration for Vite Frontend
+// Disable signature header
+app.disable('x-powered-by');
+
+// 1. Security Headers
+app.use(securityHeaders);
+
+// 2. CORS Configuration for Vite Frontend
 const allowedOrigins = [
   env.clientUrl,
   'http://localhost:5173',
@@ -29,11 +42,24 @@ app.use(
   })
 );
 
-// 2. Request body parsing middleware
+// 3. Request body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// 3. Simple request logger in development
+// 4. Rate Limiting Middleware
+app.use('/api/auth/login', authRateLimiter);
+app.use('/api/auth/register', authRateLimiter);
+app.use('/api/admin/reports/export', exportRateLimiter);
+app.use('/api', standardRateLimiter);
+
+// 5. Static file serving for uploads (sanitized local storage)
+const uploadsPath = path.resolve(__dirname, '../uploads');
+app.use('/uploads', express.static(uploadsPath, {
+  maxAge: '1d',
+  dotfiles: 'deny'
+}));
+
+// 6. Request logger in development
 if (env.isDev) {
   app.use((req, res, next) => {
     const start = Date.now();
@@ -45,7 +71,7 @@ if (env.isDev) {
   });
 }
 
-// 4. Mount API Routes under /api
+// 7. Mount API Routes under /api
 app.use('/api', apiRoutes);
 
 // Root greeting / health redirect
@@ -57,9 +83,8 @@ app.get('/', (req, res) => {
   });
 });
 
-// 5. Catch-all 404 and Error handling
+// 8. Catch-all 404 and Error handling
 app.use(notFoundHandler);
 app.use(globalErrorHandler);
 
 export default app;
-

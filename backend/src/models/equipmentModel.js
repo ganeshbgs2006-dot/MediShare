@@ -193,3 +193,4 @@ export const equipmentModel = {
 };
 
 export default equipmentModel;
+

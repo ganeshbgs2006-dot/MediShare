@@ -15,7 +15,11 @@ import {
   Lock,
   Unlock,
   Flag,
-  ArrowUpRight
+  ArrowUpRight,
+  Download,
+  Clock,
+  MessageSquare,
+  Star
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { adminService } from '../../services/adminService';
@@ -28,9 +32,25 @@ export default function AdminDashboard() {
   const { user: currentAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Overview Metrics State
+  // Overview Metrics State & Time Range Filter
   const [metrics, setMetrics] = useState(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
+  const [dateRange, setDateRange] = useState('30d');
+  const [reminderRunning, setReminderRunning] = useState(false);
+  const [reminderMessage, setReminderMessage] = useState(null);
+
+  // Operational Queues & Disputes State
+  const [queues, setQueues] = useState(null);
+  const [queuesLoading, setQueuesLoading] = useState(false);
+  const [disputeModalOpen, setDisputeModalOpen] = useState(false);
+  const [selectedDispute, setSelectedDispute] = useState(null);
+  const [disputeResolution, setDisputeResolution] = useState('');
+  const [disputeSubmitting, setDisputeSubmitting] = useState(false);
+  const [disputeError, setDisputeError] = useState(null);
+
+  // CSV Export State
+  const [exportingType, setExportingType] = useState(null);
+  const [exportSuccess, setExportSuccess] = useState(null);
 
   // Users Tab State
   const [users, setUsers] = useState([]);
@@ -65,10 +85,10 @@ export default function AdminDashboard() {
   const [modalError, setModalError] = useState(null);
 
   // 1. Load Overview Metrics
-  const loadMetrics = async () => {
+  const loadMetrics = async (range = dateRange) => {
     setMetricsLoading(true);
     try {
-      const data = await adminService.getDashboardMetrics();
+      const data = await adminService.getDashboardMetrics(range);
       if (data && data.metrics) {
         setMetrics(data.metrics);
       }
@@ -151,14 +171,89 @@ export default function AdminDashboard() {
     }
   };
 
+  // 6. Load Operational Queues
+  const loadQueues = async () => {
+    setQueuesLoading(true);
+    try {
+      const data = await adminService.getOperationalQueues();
+      if (data && data.queues) {
+        setQueues(data.queues);
+      }
+    } catch (err) {
+      console.error('Failed to load operational queues:', err);
+    } finally {
+      setQueuesLoading(false);
+    }
+  };
+
   // Initial & Tab-switch triggers
   useEffect(() => {
-    if (activeTab === 'overview') loadMetrics();
+    if (activeTab === 'overview') loadMetrics(dateRange);
+    if (activeTab === 'queues') loadQueues();
     if (activeTab === 'users') loadUsers();
     if (activeTab === 'equipment') loadEquipment();
     if (activeTab === 'bookings') loadBookings();
     if (activeTab === 'audit') loadAuditLogs();
-  }, [activeTab]);
+  }, [activeTab, dateRange]);
+
+  // Automated Reminders runner
+  const handleTriggerReminders = async () => {
+    setReminderRunning(true);
+    setReminderMessage(null);
+    try {
+      const res = await adminService.runReminders();
+      setReminderMessage(res.message || 'Automated reminder cycle completed.');
+      setTimeout(() => setReminderMessage(null), 5000);
+      loadQueues();
+      loadMetrics(dateRange);
+    } catch (err) {
+      setReminderMessage(`Reminder error: ${err.message}`);
+    } finally {
+      setReminderRunning(false);
+    }
+  };
+
+  // Dispute resolution handlers
+  const handleOpenDisputeModal = (dispute) => {
+    setSelectedDispute(dispute);
+    setDisputeResolution('');
+    setDisputeError(null);
+    setDisputeModalOpen(true);
+  };
+
+  const handleResolveDispute = async () => {
+    if (!selectedDispute || !disputeResolution.trim()) {
+      setDisputeError('Please provide a documented resolution explanation.');
+      return;
+    }
+    setDisputeSubmitting(true);
+    setDisputeError(null);
+    try {
+      await adminService.resolveDispute(selectedDispute.id, disputeResolution);
+      setDisputeModalOpen(false);
+      loadQueues();
+      loadMetrics(dateRange);
+    } catch (err) {
+      setDisputeError(err.message || 'Failed to resolve dispute.');
+    } finally {
+      setDisputeSubmitting(false);
+    }
+  };
+
+  // CSV Export handler
+  const handleExportCsv = async (type) => {
+    setExportingType(type);
+    setExportSuccess(null);
+    try {
+      await adminService.downloadReportCsv(type);
+      setExportSuccess(`Export of ${type}.csv completed. Excel formula injection defenses applied.`);
+      setTimeout(() => setExportSuccess(null), 5000);
+    } catch (err) {
+      alert(err.message || 'Failed to export CSV report.');
+    } finally {
+      setExportingType(null);
+    }
+  };
 
   // Modal Handlers
   const handleOpenUserModal = (targetUser, makeActive) => {
@@ -260,7 +355,8 @@ export default function AdminDashboard() {
           size="sm"
           leftIcon={<RefreshCw size={14} />}
           onClick={() => {
-            if (activeTab === 'overview') loadMetrics();
+            if (activeTab === 'overview') loadMetrics(dateRange);
+            if (activeTab === 'queues') loadQueues();
             if (activeTab === 'users') loadUsers();
             if (activeTab === 'equipment') loadEquipment();
             if (activeTab === 'bookings') loadBookings();
@@ -274,7 +370,13 @@ export default function AdminDashboard() {
       {/* Tabs Navigation Bar */}
       <div className={styles.tabBar}>
         {[
-          { key: 'overview', label: 'Platform Overview', icon: <Package size={16} /> },
+          { key: 'overview', label: 'Platform Overview & Trends', icon: <Package size={16} /> },
+          {
+            key: 'queues',
+            label: `Operational Queues ${queues?.counts?.totalActionable ? `(${queues.counts.totalActionable})` : ''}`,
+            icon: <AlertTriangle size={16} />
+          },
+          { key: 'reports', label: 'Reports & CSV Export', icon: <Download size={16} /> },
           { key: 'users', label: 'User Governance', icon: <Users size={16} /> },
           { key: 'equipment', label: 'Equipment Moderation', icon: <ShieldCheck size={16} /> },
           { key: 'bookings', label: 'Booking Oversight', icon: <Calendar size={16} /> },
@@ -304,6 +406,57 @@ export default function AdminDashboard() {
             <div style={{ color: '#ef4444' }}>Unable to load dashboard metrics.</div>
           ) : (
             <>
+              {/* Range & Reminders Control Bar */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem', background: '#ffffff', padding: '0.85rem 1.25rem', borderRadius: '10px', border: '1px solid var(--slate-200)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--slate-700)' }}>Analytics Horizon:</span>
+                  <div style={{ display: 'inline-flex', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--slate-200)' }}>
+                    {[
+                      { key: '7d', label: '7 Days' },
+                      { key: '30d', label: '30 Days' },
+                      { key: '90d', label: '90 Days' }
+                    ].map((r) => (
+                      <button
+                        key={r.key}
+                        type="button"
+                        onClick={() => {
+                          setDateRange(r.key);
+                          loadMetrics(r.key);
+                        }}
+                        style={{
+                          padding: '0.35rem 0.85rem',
+                          fontSize: '0.8125rem',
+                          fontWeight: 600,
+                          border: 'none',
+                          cursor: 'pointer',
+                          background: dateRange === r.key ? 'var(--teal-600)' : '#ffffff',
+                          color: dateRange === r.key ? '#ffffff' : 'var(--slate-600)'
+                        }}
+                      >
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  {reminderMessage && (
+                    <span style={{ fontSize: '0.8125rem', color: '#15803d', fontWeight: 600 }}>
+                      ✓ {reminderMessage}
+                    </span>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<Clock size={14} />}
+                    onClick={handleTriggerReminders}
+                    isLoading={reminderRunning}
+                  >
+                    Run Automated Reminders
+                  </Button>
+                </div>
+              </div>
+
               {/* Top 4 KPI Metrics */}
               <div className={styles.metricsGrid}>
                 <div className={styles.metricCard}>
@@ -472,8 +625,405 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
+
+              {/* Daily Booking Trends Chart */}
+              {metrics.trends?.dailyBookings && metrics.trends.dailyBookings.length > 0 && (
+                <div className={styles.tableCard} style={{ marginTop: '2rem' }}>
+                  <div className={styles.tableHeader}>
+                    <div>
+                      <h3 className={styles.tableTitle}>Equipment Booking Trends ({dateRange.toUpperCase()})</h3>
+                      <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--slate-500)' }}>
+                        Daily transaction volume across community equipment requests.
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'flex-end', gap: '0.65rem', overflowX: 'auto', minHeight: '160px' }}>
+                    {metrics.trends.dailyBookings.map((day, idx) => {
+                      const counts = metrics.trends.dailyBookings.map(d => d.count);
+                      const maxVal = Math.max(...counts, 1);
+                      const heightPercent = Math.max(14, Math.round((day.count / maxVal) * 110));
+                      return (
+                        <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '40px', flex: 1 }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: day.count > 0 ? 'var(--teal-700)' : 'var(--slate-400)', marginBottom: '0.25rem' }}>
+                            {day.count}
+                          </span>
+                          <div
+                            style={{
+                              width: '100%',
+                              maxWidth: '34px',
+                              height: `${heightPercent}px`,
+                              background: day.count > 0 ? 'var(--teal-600)' : 'var(--slate-200)',
+                              borderRadius: '4px 4px 0 0',
+                              transition: 'height 0.3s ease'
+                            }}
+                            title={`${day.date}: ${day.count} bookings`}
+                          />
+                          <span style={{ fontSize: '0.6875rem', color: 'var(--slate-500)', marginTop: '0.5rem', whiteSpace: 'nowrap' }}>
+                            {day.date.split('-').slice(1).join('/')}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </>
           )}
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* OPERATIONAL QUEUES & CONDITION DISPUTES TAB             */}
+      {/* ========================================================= */}
+      {activeTab === 'queues' && (
+        <div>
+          {queuesLoading ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--slate-500)' }}>
+              Loading operational queues and inspection disputes...
+            </div>
+          ) : !queues ? (
+            <div style={{ color: '#ef4444' }}>Unable to load operational queues.</div>
+          ) : (
+            <>
+              {/* Queue Summary Cards */}
+              <div className={styles.metricsGrid} style={{ marginBottom: '2rem' }}>
+                <div className={styles.metricCard}>
+                  <div className={styles.metricTop}>
+                    <div className={styles.metricLabel}>Overdue Returns</div>
+                    <div className={styles.metricIconWrap} style={{ background: '#fef2f2', color: '#dc2626' }}>
+                      <Clock size={22} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className={styles.metricValue} style={{ color: '#dc2626' }}>
+                      {queues.counts?.overdueReturns || 0}
+                    </div>
+                    <div className={styles.metricSubtext}>Equipment past agreed return date</div>
+                  </div>
+                </div>
+
+                <div className={styles.metricCard}>
+                  <div className={styles.metricTop}>
+                    <div className={styles.metricLabel}>Condition Disputes</div>
+                    <div className={styles.metricIconWrap} style={{ background: '#fffbeb', color: '#d97706' }}>
+                      <AlertTriangle size={22} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className={styles.metricValue} style={{ color: '#d97706' }}>
+                      {queues.counts?.openDisputes || 0}
+                    </div>
+                    <div className={styles.metricSubtext}>Discrepancies requiring arbitration</div>
+                  </div>
+                </div>
+
+                <div className={styles.metricCard}>
+                  <div className={styles.metricTop}>
+                    <div className={styles.metricLabel}>Pending Moderation</div>
+                    <div className={styles.metricIconWrap} style={{ background: '#f0fdf4', color: '#16a34a' }}>
+                      <ShieldCheck size={22} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className={styles.metricValue} style={{ color: '#16a34a' }}>
+                      {queues.counts?.pendingEquipment || 0}
+                    </div>
+                    <div className={styles.metricSubtext}>Awaiting clinical safety review</div>
+                  </div>
+                </div>
+
+                <div className={styles.metricCard}>
+                  <div className={styles.metricTop}>
+                    <div className={styles.metricLabel}>Flagged Reviews</div>
+                    <div className={styles.metricIconWrap} style={{ background: '#f8fafc', color: 'var(--slate-600)' }}>
+                      <MessageSquare size={22} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className={styles.metricValue}>
+                      {queues.counts?.flaggedReviews || 0}
+                    </div>
+                    <div className={styles.metricSubtext}>Reviews held for review</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 1: Overdue Equipment Loans */}
+              <div className={styles.tableCard} style={{ marginBottom: '2rem' }}>
+                <div className={styles.tableHeader}>
+                  <div>
+                    <h3 className={styles.tableTitle} style={{ color: '#991b1b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Clock size={18} /> Overdue Equipment Returns
+                    </h3>
+                    <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--slate-500)' }}>
+                      Loans that have exceeded their scheduled end date without physical return logging.
+                    </p>
+                  </div>
+                </div>
+                <div className={styles.tableWrap}>
+                  {queues.overdueReturns && queues.overdueReturns.length > 0 ? (
+                    <table className={styles.dataTable}>
+                      <thead>
+                        <tr>
+                          <th>Booking Ref</th>
+                          <th>Equipment</th>
+                          <th>Borrower</th>
+                          <th>Expected Return</th>
+                          <th>Days Overdue</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {queues.overdueReturns.map((b) => (
+                          <tr key={b.id}>
+                            <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>{b.booking_reference}</td>
+                            <td>
+                              <strong>{b.equipment_name}</strong>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)' }}>Owner: {b.owner_name}</div>
+                            </td>
+                            <td>
+                              <strong>{b.seeker_name}</strong>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)' }}>{b.seeker_email} • {b.seeker_phone || 'No phone'}</div>
+                            </td>
+                            <td style={{ color: '#dc2626', fontWeight: 600 }}>{new Date(b.end_date).toLocaleDateString()}</td>
+                            <td>
+                              <span style={{ background: '#fef2f2', color: '#991b1b', padding: '0.2rem 0.6rem', borderRadius: '4px', fontWeight: 700, fontSize: '0.8125rem' }}>
+                                +{b.days_overdue} days
+                              </span>
+                            </td>
+                            <td>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleOpenBookingOverrideModal(b)}
+                              >
+                                Override Status
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#16a34a' }}>
+                      ✓ All active community loans are currently within their authorized schedules.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Section 2: Physical Inspection Disputes */}
+              <div className={styles.tableCard} style={{ marginBottom: '2rem' }}>
+                <div className={styles.tableHeader}>
+                  <div>
+                    <h3 className={styles.tableTitle} style={{ color: '#92400e', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <AlertTriangle size={18} /> Physical Inspection & Condition Disputes
+                    </h3>
+                    <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--slate-500)' }}>
+                      Condition checklist discrepancies logged during partner pickup or return inspections.
+                    </p>
+                  </div>
+                </div>
+                <div className={styles.tableWrap}>
+                  {queues.openDisputes && queues.openDisputes.length > 0 ? (
+                    <table className={styles.dataTable}>
+                      <thead>
+                        <tr>
+                          <th>Ref & Stage</th>
+                          <th>Equipment</th>
+                          <th>Logged By</th>
+                          <th>Dispute Reason</th>
+                          <th>Status</th>
+                          <th>Arbitration</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {queues.openDisputes.map((d) => (
+                          <tr key={d.id}>
+                            <td>
+                              <div style={{ fontFamily: 'monospace', fontWeight: 700 }}>{d.booking_reference}</div>
+                              <Badge variant="neutral">{d.stage || 'Return Inspection'}</Badge>
+                            </td>
+                            <td>
+                              <strong>{d.equipment_name}</strong>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)' }}>Condition: {d.condition_grade}</div>
+                            </td>
+                            <td>
+                              <strong>{d.inspector_name}</strong>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)' }}>{new Date(d.created_at).toLocaleDateString()}</div>
+                            </td>
+                            <td style={{ maxWidth: '280px', fontSize: '0.8125rem', color: '#991b1b' }}>
+                              {d.dispute_reason}
+                            </td>
+                            <td>
+                              {d.dispute_resolved ? (
+                                <Badge variant="approved">Resolved</Badge>
+                              ) : (
+                                <Badge variant="warning">Open Dispute</Badge>
+                              )}
+                            </td>
+                            <td>
+                              {!d.dispute_resolved ? (
+                                <Button
+                                  variant="primary"
+                                  size="sm"
+                                  onClick={() => handleOpenDisputeModal(d)}
+                                >
+                                  Resolve
+                                </Button>
+                              ) : (
+                                <span style={{ fontSize: '0.75rem', color: '#16a34a' }}>
+                                  Resolved: {d.dispute_resolution}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#16a34a' }}>
+                      ✓ No active physical condition disputes recorded across community handovers.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* COMPLIANCE REPORTS & SANITIZED CSV EXPORT TAB            */}
+      {/* ========================================================= */}
+      {activeTab === 'reports' && (
+        <div>
+          <div style={{ background: '#ffffff', borderRadius: '12px', padding: '1.75rem', border: '1px solid var(--slate-200)', marginBottom: '2rem' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--navy-900)', margin: '0 0 0.5rem 0' }}>
+              Regulatory Compliance Reports & Safe Data Exports
+            </h3>
+            <p style={{ color: 'var(--slate-600)', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1rem 0' }}>
+              MediShare exports standardized tabular data for healthcare regulatory reporting, asset accountability, and audit readiness. All CSV files are protected against Spreadsheet Formula Injection (CWE-1236) by automatically escaping unsafe formula control triggers (<code style={{ background: 'var(--slate-100)', padding: '2px 4px', borderRadius: '4px' }}>=, +, -, @, \t, \r</code>). Confidential user credentials and authentication tokens are strictly stripped prior to export.
+            </p>
+
+            {exportSuccess && (
+              <div style={{ background: '#dcfce7', color: '#166534', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #bbf7d0', fontWeight: 600, fontSize: '0.875rem', marginBottom: '1rem' }}>
+                ✓ {exportSuccess}
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+              {/* Report 1: Bookings */}
+              <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '10px', border: '1px solid var(--slate-200)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontWeight: 700, color: 'var(--navy-900)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Calendar size={18} color="var(--teal-600)" /> Equipment Bookings Registry
+                  </div>
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--slate-600)', margin: '0 0 1rem 0', lineHeight: 1.4 }}>
+                    Complete lifecycle records of all equipment requests, approval dates, return logs, prices, and partner allocations.
+                  </p>
+                </div>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  fullWidth
+                  leftIcon={<Download size={14} />}
+                  onClick={() => handleExportCsv('bookings')}
+                  isLoading={exportingType === 'bookings'}
+                >
+                  Export Bookings CSV
+                </Button>
+              </div>
+
+              {/* Report 2: Equipment */}
+              <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '10px', border: '1px solid var(--slate-200)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontWeight: 700, color: 'var(--navy-900)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Package size={18} color="var(--teal-600)" /> Assistive Equipment Inventory
+                  </div>
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--slate-600)', margin: '0 0 1rem 0', lineHeight: 1.4 }}>
+                    Full equipment catalog, category taxonomy, physical condition ratings, verified safety tags, and partner ownership.
+                  </p>
+                </div>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  fullWidth
+                  leftIcon={<Download size={14} />}
+                  onClick={() => handleExportCsv('equipment')}
+                  isLoading={exportingType === 'equipment'}
+                >
+                  Export Equipment CSV
+                </Button>
+              </div>
+
+              {/* Report 3: Users */}
+              <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '10px', border: '1px solid var(--slate-200)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontWeight: 700, color: 'var(--navy-900)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Users size={18} color="var(--teal-600)" /> User Registry & Governance
+                  </div>
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--slate-600)', margin: '0 0 1rem 0', lineHeight: 1.4 }}>
+                    Seekers, equipment partners, and administrators with verification statuses and registration timestamps (passwords stripped).
+                  </p>
+                </div>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  fullWidth
+                  leftIcon={<Download size={14} />}
+                  onClick={() => handleExportCsv('users')}
+                  isLoading={exportingType === 'users'}
+                >
+                  Export Users CSV
+                </Button>
+              </div>
+
+              {/* Report 4: Reviews */}
+              <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '10px', border: '1px solid var(--slate-200)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontWeight: 700, color: 'var(--navy-900)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Star size={18} color="#eab308" /> Community Reviews & Ratings
+                  </div>
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--slate-600)', margin: '0 0 1rem 0', lineHeight: 1.4 }}>
+                    Verified borrower satisfaction scores, feedback comments, cleanliness evaluations, and moderation status flags.
+                  </p>
+                </div>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  fullWidth
+                  leftIcon={<Download size={14} />}
+                  onClick={() => handleExportCsv('reviews')}
+                  isLoading={exportingType === 'reviews'}
+                >
+                  Export Reviews CSV
+                </Button>
+              </div>
+
+              {/* Report 5: Audit Logs */}
+              <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '10px', border: '1px solid var(--slate-200)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontWeight: 700, color: 'var(--navy-900)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <FileText size={18} color="var(--navy-700)" /> Security & Audit Trail
+                  </div>
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--slate-600)', margin: '0 0 1rem 0', lineHeight: 1.4 }}>
+                    Cryptographic audit trail of administrative actions, user suspensions, status overrides, and system events.
+                  </p>
+                </div>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  fullWidth
+                  leftIcon={<Download size={14} />}
+                  onClick={() => handleExportCsv('audit_logs')}
+                  isLoading={exportingType === 'audit_logs'}
+                >
+                  Export Audit Trail CSV
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1041,6 +1591,70 @@ export default function AdminDashboard() {
           </div>
         </div>
       </Modal>
+
+      {/* Dispute Resolution Modal */}
+      <Modal
+        isOpen={disputeModalOpen}
+        onClose={() => setDisputeModalOpen(false)}
+        title="Resolve Condition Inspection Dispute"
+        maxWidth="540px"
+      >
+        <div>
+          <p style={{ color: 'var(--slate-600)', marginBottom: '1rem', lineHeight: 1.5 }}>
+            Arbitrating inspection discrepancy for <strong>{selectedDispute?.equipment_name}</strong> (Ref: {selectedDispute?.booking_reference}).
+          </p>
+
+          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1.25rem', fontSize: '0.875rem', color: '#991b1b' }}>
+            <strong>Dispute Reason:</strong> {selectedDispute?.dispute_reason}
+          </div>
+
+          {disputeError && (
+            <div style={{ background: '#fef2f2', padding: '0.75rem', borderRadius: '8px', color: '#991b1b', marginBottom: '1rem' }}>
+              <strong>Error:</strong> {disputeError}
+            </div>
+          )}
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem', color: 'var(--navy-900)' }}>
+              Official Administrative Determination & Settlement Notes *
+            </label>
+            <textarea
+              rows={4}
+              required
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                borderRadius: '8px',
+                border: '1px solid var(--slate-300)',
+                fontFamily: 'inherit',
+                fontSize: '0.875rem',
+                boxSizing: 'border-box'
+              }}
+              placeholder="e.g., Clinical inspector re-examined equipment. Documented minor scratch is normal cosmetic wear; borrower cleared of liability..."
+              value={disputeResolution}
+              onChange={(e) => setDisputeResolution(e.target.value)}
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+            <Button
+              variant="outline"
+              onClick={() => setDisputeModalOpen(false)}
+              disabled={disputeSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleResolveDispute}
+              isLoading={disputeSubmitting}
+            >
+              Record Resolution
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
+

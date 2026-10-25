@@ -3,19 +3,39 @@ import { userModel } from '../models/userModel.js';
 import { equipmentModel } from '../models/equipmentModel.js';
 import { bookingModel } from '../models/bookingModel.js';
 import { auditLogModel } from '../models/auditLogModel.js';
+import { reviewModel } from '../models/reviewModel.js';
+import { waitlistModel } from '../models/waitlistModel.js';
+import { conditionLogModel } from '../models/conditionLogModel.js';
+import { reminderService } from '../services/reminderService.js';
+import { notificationService } from '../services/notificationService.js';
+
+/**
+ * Sanitize cell values for CSV export to strictly prevent Spreadsheet Formula Injection (CSV Injection).
+ * Prepend a single quote if string begins with =, +, -, @, tab, or carriage return.
+ */
+function sanitizeCsvValue(val) {
+  if (val === null || val === undefined) return '';
+  let str = String(val);
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = `'${str}`;
+  }
+  if (/[",\n\r]/.test(str)) {
+    str = `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
 
 export const adminController = {
   /**
-   * Get administrative dashboard metrics & high-level summary
+   * Get administrative dashboard metrics with date-range filtering & time-series trends
    */
   async getDashboardMetrics(req, res, next) {
     try {
+      const { range = '30d' } = req.query;
+
       // 1. User metrics
       const userRows = await query(`
-        SELECT 
-          role,
-          is_active,
-          COUNT(*) as cnt
+        SELECT role, is_active, COUNT(*) as cnt
         FROM users
         GROUP BY role, is_active
       `);
@@ -45,13 +65,7 @@ export const adminController = {
       `);
 
       let totalEquipment = 0;
-      const equipmentByModeration = {
-        approved: 0,
-        pending: 0,
-        flagged: 0,
-        rejected: 0
-      };
-
+      const equipmentByModeration = { approved: 0, pending: 0, flagged: 0, rejected: 0 };
       equipmentRows.forEach(row => {
         const count = Number(row.cnt);
         totalEquipment += count;
@@ -85,7 +99,51 @@ export const adminController = {
         }
       });
 
-      // 4. Recent 5 users
+      // 4. Overdue loans
+      const overdueRows = await query(`
+        SELECT COUNT(*) AS total
+        FROM bookings
+        WHERE status = 'active_loan' AND end_date < CURDATE()
+      `);
+      const overdueLoansCount = overdueRows[0]?.total || 0;
+
+      // 5. Open disputes
+      const openDisputesCount = await conditionLogModel.countOpenDisputes();
+
+      // 6. Review metrics
+      const reviewRows = await query(`
+        SELECT COUNT(*) as total, COALESCE(AVG(rating), 0) as avg_rating
+        FROM reviews
+        WHERE moderation_status = 'approved'
+      `);
+      const totalReviews = reviewRows[0]?.total || 0;
+      const averageRating = Number(Number(reviewRows[0]?.avg_rating || 0).toFixed(1));
+
+      // 7. Active waitlist count
+      const waitlistRows = await query(`
+        SELECT COUNT(*) as total FROM waitlist WHERE status = 'active'
+      `);
+      const activeWaitlistCount = waitlistRows[0]?.total || 0;
+
+      // 8. Trends (Daily breakdown for the selected range)
+      const days = range === '7d' ? 7 : range === '90d' ? 90 : 30;
+      const userTrends = await query(`
+        SELECT DATE(created_at) as date, COUNT(*) as count
+        FROM users
+        WHERE created_at >= CURDATE() - INTERVAL ? DAY
+        GROUP BY DATE(created_at)
+        ORDER BY date ASC
+      `, [days]);
+
+      const bookingTrends = await query(`
+        SELECT DATE(created_at) as date, COUNT(*) as count
+        FROM bookings
+        WHERE created_at >= CURDATE() - INTERVAL ? DAY
+        GROUP BY DATE(created_at)
+        ORDER BY date ASC
+      `, [days]);
+
+      // 9. Recent 5 users
       const recentUsers = await query(`
         SELECT id, full_name, email, role, is_active, created_at
         FROM users
@@ -93,7 +151,7 @@ export const adminController = {
         LIMIT 5
       `);
 
-      // 5. Recent 5 bookings
+      // 10. Recent 5 bookings
       const recentBookings = await query(`
         SELECT 
           b.id,
@@ -115,6 +173,7 @@ export const adminController = {
       return res.status(200).json({
         success: true,
         metrics: {
+          range,
           users: {
             total: totalUsers,
             seekers: totalSeekers,
@@ -129,11 +188,292 @@ export const adminController = {
           },
           bookings: {
             total: totalBookings,
-            byStatus: bookingsByStatus
+            byStatus: bookingsByStatus,
+            overdue: overdueLoansCount
+          },
+          operational: {
+            openDisputes: openDisputesCount,
+            activeWaitlist: activeWaitlistCount,
+            totalReviews,
+            averageRating
+          },
+          trends: {
+            users: userTrends,
+            bookings: bookingTrends
           },
           recentUsers,
           recentBookings
         }
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * Operational queues requiring administrator attention
+   */
+  async getOperationalQueues(req, res, next) {
+    try {
+      // 1. Overdue Returns
+      const overdueSql = `
+        SELECT 
+          b.id,
+          b.booking_reference,
+          b.start_date,
+          b.end_date,
+          e.name AS equipment_name,
+          seeker.full_name AS seeker_name,
+          seeker.phone AS seeker_phone,
+          owner.full_name AS owner_name
+        FROM bookings b
+        JOIN equipment e ON b.equipment_id = e.id
+        JOIN users seeker ON b.seeker_id = seeker.id
+        JOIN users owner ON e.owner_id = owner.id
+        WHERE b.status = 'active_loan'
+          AND b.end_date < CURDATE()
+        ORDER BY b.end_date ASC
+      `;
+      const overdueReturns = await query(overdueSql);
+
+      // 2. Open Condition Disputes
+      const openDisputes = await conditionLogModel.listDisputes({ resolved: false });
+
+      // 3. Pending Equipment Moderation
+      const pendingEquipmentSql = `
+        SELECT e.id, e.name, e.category, e.created_at, u.full_name AS owner_name
+        FROM equipment e
+        JOIN users u ON e.owner_id = u.id
+        WHERE e.moderation_status = 'pending'
+        ORDER BY e.created_at ASC
+      `;
+      const pendingEquipment = await query(pendingEquipmentSql);
+
+      // 4. Flagged Reviews
+      const flaggedReviewsSql = `
+        SELECT r.id, r.rating, r.comment, r.created_at, u.full_name AS reviewer_name, e.name AS equipment_name
+        FROM reviews r
+        JOIN users u ON r.reviewer_id = u.id
+        JOIN equipment e ON r.equipment_id = e.id
+        WHERE r.moderation_status = 'flagged'
+        ORDER BY r.created_at ASC
+      `;
+      const flaggedReviews = await query(flaggedReviewsSql);
+
+      return res.status(200).json({
+        success: true,
+        queues: {
+          overdueReturns,
+          openDisputes,
+          pendingEquipment,
+          flaggedReviews
+        }
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * Resolve condition dispute
+   */
+  async resolveDispute(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { resolution } = req.body;
+
+      if (!resolution || !resolution.trim()) {
+        return res.status(400).json({ success: false, error: 'A resolution explanation is required.' });
+      }
+
+      const dispute = await conditionLogModel.findById(id);
+      if (!dispute) {
+        return res.status(404).json({ success: false, error: 'Dispute record not found.' });
+      }
+
+      const resolved = await conditionLogModel.resolveDispute(id, resolution);
+
+      // Audit log
+      await auditLogModel.create({
+        adminId: req.user.id,
+        action: 'DISPUTE_RESOLVED',
+        entityType: 'booking',
+        entityId: dispute.booking_id,
+        oldValue: { is_disputed: dispute.is_disputed, dispute_resolved: 0 },
+        newValue: { dispute_resolved: 1, dispute_resolution: resolution },
+        reason: resolution,
+        ipAddress: req.ip
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Condition inspection dispute resolved.',
+        dispute: resolved
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * Secure CSV Export with Formula Injection Protection
+   */
+  async exportReportCsv(req, res, next) {
+    try {
+      const { type = 'bookings' } = req.query;
+
+      let filename = `medishare-${type}-${Date.now()}.csv`;
+      let headers = [];
+      let rows = [];
+
+      if (type === 'bookings') {
+        headers = ['Booking Ref', 'Equipment', 'Category', 'Seeker', 'Seeker Email', 'Owner', 'Start Date', 'End Date', 'Status', 'Total Price', 'Created At'];
+        const data = await query(`
+          SELECT 
+            b.booking_reference,
+            e.name AS equipment_name,
+            e.category,
+            seeker.full_name AS seeker_name,
+            seeker.email AS seeker_email,
+            owner.full_name AS owner_name,
+            b.start_date,
+            b.end_date,
+            b.status,
+            b.total_price,
+            b.created_at
+          FROM bookings b
+          JOIN equipment e ON b.equipment_id = e.id
+          JOIN users seeker ON b.seeker_id = seeker.id
+          JOIN users owner ON e.owner_id = owner.id
+          ORDER BY b.created_at DESC
+          LIMIT 1000
+        `);
+
+        rows = data.map(r => [
+          r.booking_reference,
+          r.equipment_name,
+          r.category,
+          r.seeker_name,
+          r.seeker_email,
+          r.owner_name,
+          r.start_date,
+          r.end_date,
+          r.status,
+          r.total_price,
+          r.created_at
+        ]);
+      } else if (type === 'equipment') {
+        headers = ['ID', 'Name', 'Category', 'Sharing Type', 'Price/Day', 'Availability', 'Moderation', 'Owner Name', 'Service Area', 'Created At'];
+        const data = await query(`
+          SELECT e.id, e.name, e.category, e.sharing_type, e.price_per_day, e.availability_status, e.moderation_status, u.full_name AS owner_name, e.service_area, e.created_at
+          FROM equipment e
+          JOIN users u ON e.owner_id = u.id
+          ORDER BY e.created_at DESC
+          LIMIT 1000
+        `);
+
+        rows = data.map(r => [
+          r.id,
+          r.name,
+          r.category,
+          r.sharing_type,
+          r.price_per_day,
+          r.availability_status,
+          r.moderation_status,
+          r.owner_name,
+          r.service_area,
+          r.created_at
+        ]);
+      } else if (type === 'users') {
+        // Excludes password_hash, tokens, and sensitive private authentication details
+        headers = ['ID', 'Full Name', 'Email', 'Role', 'Organization', 'Service Area', 'Is Verified', 'Is Active', 'Created At'];
+        const data = await query(`
+          SELECT id, full_name, email, role, organization_name, service_area, is_verified, is_active, created_at
+          FROM users
+          ORDER BY created_at DESC
+          LIMIT 1000
+        `);
+
+        rows = data.map(r => [
+          r.id,
+          r.full_name,
+          r.email,
+          r.role,
+          r.organization_name,
+          r.service_area,
+          r.is_verified ? 'Yes' : 'No',
+          r.is_active ? 'Active' : 'Suspended',
+          r.created_at
+        ]);
+      } else if (type === 'reviews') {
+        headers = ['Review ID', 'Booking ID', 'Equipment', 'Reviewer', 'Rating', 'Comment', 'Moderation', 'Created At'];
+        const data = await query(`
+          SELECT r.id, r.booking_id, e.name AS equipment_name, u.full_name AS reviewer_name, r.rating, r.comment, r.moderation_status, r.created_at
+          FROM reviews r
+          JOIN equipment e ON r.equipment_id = e.id
+          JOIN users u ON r.reviewer_id = u.id
+          ORDER BY r.created_at DESC
+          LIMIT 1000
+        `);
+
+        rows = data.map(r => [
+          r.id,
+          r.booking_id,
+          r.equipment_name,
+          r.reviewer_name,
+          r.rating,
+          r.comment,
+          r.moderation_status,
+          r.created_at
+        ]);
+      } else if (type === 'audit') {
+        headers = ['Log ID', 'Timestamp', 'Admin Name', 'Admin Email', 'Action', 'Entity Type', 'Entity ID', 'Reason', 'IP Address'];
+        const data = await query(`
+          SELECT a.id, a.created_at, u.full_name AS admin_name, u.email AS admin_email, a.action, a.entity_type, a.entity_id, a.reason, a.ip_address
+          FROM audit_logs a
+          JOIN users u ON a.admin_id = u.id
+          ORDER BY a.created_at DESC
+          LIMIT 1000
+        `);
+
+        rows = data.map(r => [
+          r.id,
+          r.created_at,
+          r.admin_name,
+          r.admin_email,
+          r.action,
+          r.entity_type,
+          r.entity_id,
+          r.reason,
+          r.ip_address
+        ]);
+      } else {
+        return res.status(400).json({ success: false, error: 'Invalid report export type specified.' });
+      }
+
+      // Build CSV text with strict formula injection sanitization
+      const headerLine = headers.map(h => sanitizeCsvValue(h)).join(',');
+      const dataLines = rows.map(r => r.map(c => sanitizeCsvValue(c)).join(','));
+      const csvContent = '\uFEFF' + [headerLine, ...dataLines].join('\r\n'); // UTF-8 BOM for Excel
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      return res.status(200).send(csvContent);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * Run scheduled background reminders on-demand
+   */
+  async runScheduledReminders(req, res, next) {
+    try {
+      const results = await reminderService.runScheduledReminders();
+      return res.status(200).json({
+        success: true,
+        message: 'Scheduled reminder check completed.',
+        results
       });
     } catch (err) {
       next(err);

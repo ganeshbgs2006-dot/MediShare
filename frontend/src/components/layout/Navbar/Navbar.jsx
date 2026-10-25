@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import Button from '../../common/Button/Button';
+import NotificationBell from '../../common/NotificationBell/NotificationBell';
 import styles from './Navbar.module.css';
 
 export default function Navbar() {
@@ -104,24 +105,27 @@ export default function Navbar() {
           {/* Desktop Call To Actions */}
           <div className={styles.actions}>
             {isAuthenticated ? (
-              <div className={styles.userProfileStrip}>
-                <div className={styles.userInfo}>
-                  <div className={styles.userAvatar}>
-                    <User size={14} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <NotificationBell />
+                <div className={styles.userProfileStrip}>
+                  <div className={styles.userInfo}>
+                    <div className={styles.userAvatar}>
+                      <User size={14} />
+                    </div>
+                    <div className={styles.userMeta}>
+                      <span className={styles.userName}>{user.fullName}</span>
+                      <span className={styles.userRoleTag}>{user.role}</span>
+                    </div>
                   </div>
-                  <div className={styles.userMeta}>
-                    <span className={styles.userName}>{user.fullName}</span>
-                    <span className={styles.userRoleTag}>{user.role}</span>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={logout}
+                    leftIcon={<LogOut size={14} />}
+                  >
+                    Sign Out
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={logout}
-                  leftIcon={<LogOut size={14} />}
-                >
-                  Sign Out
-                </Button>
               </div>
             ) : (
               <>

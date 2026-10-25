@@ -43,12 +43,66 @@ async function request(endpoint, options = {}) {
 
 export const adminService = {
   /**
-   * Fetch system-wide KPIs and recent activity metrics
+   * Fetch system-wide KPIs, operational metrics, and time-series trends
    */
-  async getDashboardMetrics() {
-    return request('/admin/dashboard', {
+  async getDashboardMetrics(range = '30d') {
+    return request(`/admin/dashboard?range=${range}`, {
       method: 'GET'
     });
+  },
+
+  /**
+   * Fetch actionable operational queues (overdue loans, condition disputes, pending moderation)
+   */
+  async getOperationalQueues() {
+    return request('/admin/queues', {
+      method: 'GET'
+    });
+  },
+
+  /**
+   * Resolve an inspection condition dispute
+   */
+  async resolveDispute(id, resolution) {
+    return request(`/admin/disputes/${id}/resolve`, {
+      method: 'PATCH',
+      body: JSON.stringify({ resolution })
+    });
+  },
+
+  /**
+   * Run automated reminder checks
+   */
+  async runReminders() {
+    return request('/admin/reminders/run', {
+      method: 'POST'
+    });
+  },
+
+  /**
+   * Download sanitized CSV report
+   */
+  async downloadReportCsv(type = 'bookings') {
+    const token = localStorage.getItem('medishare_token');
+    const response = await fetch(`${API_BASE_URL}/admin/reports/export?type=${type}`, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to export ${type} report: Status ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `medishare-${type}-${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   },
 
   /**
@@ -146,3 +200,4 @@ export const adminService = {
 };
 
 export default adminService;
+

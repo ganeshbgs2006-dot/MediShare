@@ -412,3 +412,4 @@ export default function OwnerBookings() {
     </div>
   );
 }
+

@@ -103,3 +103,4 @@ export const equipmentController = {
 };
 
 export default equipmentController;
+

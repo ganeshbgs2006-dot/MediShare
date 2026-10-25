@@ -1,5 +1,8 @@
 import { bookingModel } from '../models/bookingModel.js';
 import { equipmentModel } from '../models/equipmentModel.js';
+import { userModel } from '../models/userModel.js';
+import { notificationService } from '../services/notificationService.js';
+import { waitlistModel } from '../models/waitlistModel.js';
 import { getPool } from '../config/db.js';
 
 export const bookingController = {
@@ -94,6 +97,20 @@ export const bookingController = {
       }, connection);
 
       await connection.commit();
+
+      // Dispatch non-blocking in-app notification & optional email
+      try {
+        const owner = await userModel.findById(equipment.owner_id);
+        const seeker = await userModel.findById(seekerId);
+        await notificationService.notifyBookingCreated({
+          booking: newBooking,
+          seeker,
+          owner,
+          equipment
+        });
+      } catch (notifErr) {
+        console.warn('[BOOKING] Notification dispatch error:', notifErr.message);
+      }
 
       return res.status(201).json({
         success: true,
@@ -259,6 +276,17 @@ export const bookingController = {
         const updated = await bookingModel.updateStatus(id, 'approved', { handoverNotes }, connection);
         await connection.commit();
 
+        try {
+          const seeker = await userModel.findById(booking.seeker_id);
+          await notificationService.notifyBookingApproved({
+            booking: updated,
+            seeker,
+            equipment: { name: booking.equipment_name }
+          });
+        } catch (e) {
+          console.warn('[BOOKING] Notification error:', e.message);
+        }
+
         return res.status(200).json({
           success: true,
           message: 'Booking request accepted and confirmed.',
@@ -276,6 +304,19 @@ export const bookingController = {
         const updated = await bookingModel.updateStatus(id, 'rejected', {
           rejectionReason: reason || 'Equipment unavailable for requested period.'
         });
+
+        try {
+          const seeker = await userModel.findById(booking.seeker_id);
+          await notificationService.notifyBookingRejected({
+            booking: updated,
+            seeker,
+            equipment: { name: booking.equipment_name },
+            reason
+          });
+        } catch (e) {
+          console.warn('[BOOKING] Notification error:', e.message);
+        }
+
         return res.status(200).json({
           success: true,
           message: 'Booking request has been declined.',
@@ -291,6 +332,18 @@ export const bookingController = {
           });
         }
         const updated = await bookingModel.updateStatus(id, 'active_loan', { handoverNotes });
+
+        try {
+          const seeker = await userModel.findById(booking.seeker_id);
+          await notificationService.notifyBookingHandover({
+            booking: updated,
+            seeker,
+            equipment: { name: booking.equipment_name }
+          });
+        } catch (e) {
+          console.warn('[BOOKING] Notification error:', e.message);
+        }
+
         return res.status(200).json({
           success: true,
           message: 'Equipment handover logged. Loan is now active.',
@@ -306,6 +359,22 @@ export const bookingController = {
           });
         }
         const updated = await bookingModel.updateStatus(id, 'returned', { handoverNotes });
+
+        try {
+          const seeker = await userModel.findById(booking.seeker_id);
+          const owner = await userModel.findById(booking.owner_id);
+          await notificationService.notifyBookingReturned({
+            booking: updated,
+            seeker,
+            owner,
+            equipment: { id: booking.equipment_id, name: booking.equipment_name }
+          });
+          // Notify queued waitlist seekers that equipment has returned!
+          await waitlistModel.notifyEligibleWaitlist(booking.equipment_id);
+        } catch (e) {
+          console.warn('[BOOKING] Notification/Waitlist error:', e.message);
+        }
+
         return res.status(200).json({
           success: true,
           message: 'Equipment return verified and recorded. Booking completed.',
@@ -363,6 +432,19 @@ export const bookingController = {
         cancellationReason: reason || `Cancelled by ${isAdmin ? 'admin' : isSeeker ? 'seeker' : 'owner'}.`
       });
 
+      try {
+        const recipientId = isSeeker ? booking.owner_id : booking.seeker_id;
+        await notificationService.notifyBookingCancelled({
+          booking: updated,
+          recipientId,
+          cancelledByName: req.user.fullName || req.user.full_name || (isSeeker ? 'Care seeker' : 'Partner'),
+          equipment: { name: booking.equipment_name },
+          reason
+        });
+      } catch (e) {
+        console.warn('[BOOKING] Cancellation notification error:', e.message);
+      }
+
       return res.status(200).json({
         success: true,
         message: 'Booking has been cancelled.',
@@ -375,3 +457,4 @@ export const bookingController = {
 };
 
 export default bookingController;
+

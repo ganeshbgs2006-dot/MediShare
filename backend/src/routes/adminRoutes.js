@@ -9,8 +9,18 @@ const router = Router();
 router.use(authenticateToken);
 router.use(authorizeRoles('admin'));
 
-// Platform overview metrics
+// Platform overview metrics & date-range trends
 router.get('/dashboard', adminController.getDashboardMetrics);
+
+// Operational work queues (Overdue returns, Disputes, Moderation)
+router.get('/queues', adminController.getOperationalQueues);
+router.patch('/disputes/:id/resolve', adminController.resolveDispute);
+
+// Secure CSV Report Export
+router.get('/reports/export', adminController.exportReportCsv);
+
+// Background reminder check trigger
+router.post('/reminders/run', adminController.runScheduledReminders);
 
 // User governance & suspension
 router.get('/users', adminController.listUsers);
@@ -28,3 +38,4 @@ router.patch('/bookings/:id/override', adminController.overrideBooking);
 router.get('/audit-logs', adminController.getAuditLogs);
 
 export default router;
+

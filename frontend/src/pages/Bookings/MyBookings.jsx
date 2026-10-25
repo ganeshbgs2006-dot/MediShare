@@ -11,9 +11,11 @@ import {
   HelpCircle,
   ArrowRight,
   ShieldCheck,
-  Package
+  Package,
+  Star
 } from 'lucide-react';
 import { bookingService } from '../../services/bookingService';
+import { reviewService } from '../../services/reviewService';
 import Button from '../../components/common/Button/Button';
 import Badge from '../../components/common/Badge/Badge';
 import Modal from '../../components/common/Modal/Modal';
@@ -31,6 +33,15 @@ export default function MyBookings() {
   const [cancelReason, setCancelReason] = useState('');
   const [isSubmittingCancel, setIsSubmittingCancel] = useState(false);
   const [cancelError, setCancelError] = useState(null);
+
+  // Review modal state
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewBooking, setReviewBooking] = useState(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState(null);
+  const [reviewSuccess, setReviewSuccess] = useState(null);
 
   const fetchBookings = async () => {
     setIsLoading(true);
@@ -71,6 +82,39 @@ export default function MyBookings() {
       setCancelError(err.message || 'Failed to cancel booking request.');
     } finally {
       setIsSubmittingCancel(false);
+    }
+  };
+
+  const handleOpenReview = (booking) => {
+    setSelectedBooking(booking);
+    setReviewBooking(booking);
+    setReviewRating(5);
+    setReviewComment('');
+    setReviewError(null);
+    setReviewSuccess(null);
+    setReviewModalOpen(true);
+  };
+
+  const handleConfirmReview = async () => {
+    if (!reviewBooking) return;
+    setIsSubmittingReview(true);
+    setReviewError(null);
+
+    try {
+      await reviewService.createReview({
+        bookingId: reviewBooking.id,
+        rating: reviewRating,
+        comment: reviewComment
+      });
+      setReviewSuccess('Thank you! Your feedback has been recorded.');
+      setTimeout(() => {
+        setReviewModalOpen(false);
+        fetchBookings();
+      }, 1000);
+    } catch (err) {
+      setReviewError(err.message || 'Failed to submit review.');
+    } finally {
+      setIsSubmittingReview(false);
     }
   };
 
@@ -256,6 +300,23 @@ export default function MyBookings() {
                   </Button>
                 </Link>
 
+                {booking.status === 'returned' && (
+                  booking.review_id ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: '#166534', background: '#dcfce7', padding: '0.35rem 0.75rem', borderRadius: '6px', fontSize: '0.8125rem', fontWeight: 600 }}>
+                      <Star size={14} fill="#eab308" color="#eab308" /> Reviewed ({booking.review_rating}/5)
+                    </span>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleOpenReview(booking)}
+                    >
+                      <Star size={14} style={{ marginRight: '6px' }} />
+                      Leave a Review
+                    </Button>
+                  )
+                )}
+
                 {['pending', 'approved'].includes(booking.status) && (
                   <Button
                     variant="danger"
@@ -328,6 +389,105 @@ export default function MyBookings() {
           </div>
         </div>
       </Modal>
+
+      {/* Review Dialog Modal */}
+      <Modal
+        isOpen={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        title="Leave Equipment Review"
+        maxWidth="500px"
+      >
+        <div>
+          <p style={{ color: 'var(--slate-600)', marginBottom: '1rem', lineHeight: 1.5 }}>
+            Share your feedback on <strong>{reviewBooking?.equipment_name}</strong> to help community members make informed health decisions.
+          </p>
+
+          {reviewError && (
+            <div className={styles.alertBox} style={{ marginBottom: '1rem' }}>
+              {reviewError}
+            </div>
+          )}
+
+          {reviewSuccess && (
+            <div style={{ background: '#dcfce7', color: '#166534', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem', fontWeight: 600, border: '1px solid #bbf7d0' }}>
+              ✓ {reviewSuccess}
+            </div>
+          )}
+
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem', color: 'var(--navy-900)' }}>
+              Overall Rating
+            </label>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setReviewRating(star)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                  title={`${star} Star${star > 1 ? 's' : ''}`}
+                >
+                  <Star
+                    size={28}
+                    fill={star <= reviewRating ? '#eab308' : 'none'}
+                    color={star <= reviewRating ? '#eab308' : 'var(--slate-300)'}
+                  />
+                </button>
+              ))}
+              <span style={{ marginLeft: '0.5rem', fontWeight: 700, color: 'var(--navy-900)' }}>
+                {reviewRating} of 5 Stars
+              </span>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem', color: 'var(--navy-900)' }}>
+              Detailed Experience (Cleanliness, Usability, Handover)
+            </label>
+            <textarea
+              rows={4}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                borderRadius: '8px',
+                border: '1px solid var(--slate-300)',
+                fontFamily: 'inherit',
+                fontSize: '0.875rem',
+                boxSizing: 'border-box'
+              }}
+              placeholder="e.g., The equipment was thoroughly sanitized, in pristine working order, and handover was smooth..."
+              value={reviewComment}
+              onChange={(e) => setReviewComment(e.target.value)}
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+            <Button
+              variant="outline"
+              onClick={() => setReviewModalOpen(false)}
+              disabled={isSubmittingReview}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleConfirmReview}
+              isLoading={isSubmittingReview}
+              disabled={isSubmittingReview || !!reviewSuccess}
+            >
+              Submit Review
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
+

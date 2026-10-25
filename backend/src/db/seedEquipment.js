@@ -245,3 +245,4 @@ if (process.argv[1] && process.argv[1].endsWith('seedEquipment.js')) {
       process.exit(1);
     });
 }
+

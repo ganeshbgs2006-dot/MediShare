@@ -78,7 +78,23 @@ async function runMigrations() {
     `);
     console.log('[MIGRATE] Verified audit_logs table.');
 
-    // 5. Seed equipment if empty
+    // 5. Phase 6 & Phase 7 enhancements
+    await addCol('condition_logs', 'is_disputed', 'BOOLEAN NOT NULL DEFAULT 0 AFTER verified_by_owner');
+    await addCol('condition_logs', 'dispute_reason', 'TEXT NULL AFTER is_disputed');
+    await addCol('condition_logs', 'dispute_resolved', 'BOOLEAN NOT NULL DEFAULT 0 AFTER dispute_reason');
+    await addCol('condition_logs', 'dispute_resolution', 'TEXT NULL AFTER dispute_resolved');
+
+    try {
+      await connection.query(`
+        ALTER TABLE audit_logs
+        MODIFY COLUMN entity_type ENUM('user', 'equipment', 'booking', 'system', 'review', 'waitlist') NOT NULL;
+      `);
+      console.log('[MIGRATE] Updated audit_logs entity_type ENUM.');
+    } catch (e) {
+      console.warn('[MIGRATE] audit_logs entity_type update notice:', e.message);
+    }
+
+    // 6. Seed equipment if empty
     try {
       const { seedEquipment } = await import('./seedEquipment.js');
       await seedEquipment();

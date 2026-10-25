@@ -160,10 +160,13 @@ export const bookingModel = {
         e.service_area AS equipment_service_area,
         owner.full_name AS owner_name,
         owner.phone AS owner_phone,
-        owner.organization_name AS owner_organization
+        owner.organization_name AS owner_organization,
+        r.id AS review_id,
+        r.rating AS review_rating
       FROM bookings b
       JOIN equipment e ON b.equipment_id = e.id
       JOIN users owner ON e.owner_id = owner.id
+      LEFT JOIN reviews r ON r.booking_id = b.id
       WHERE ${conditions.join(' AND ')}
       ORDER BY b.created_at DESC
       LIMIT ? OFFSET ?
@@ -323,3 +326,4 @@ export const bookingModel = {
 };
 
 export default bookingModel;
+

@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { getEquipmentById } from '../../services/equipmentService';
 import { bookingService } from '../../services/bookingService';
+import { reviewService } from '../../services/reviewService';
+import { waitlistService } from '../../services/waitlistService';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/common/Button/Button';
 import Badge from '../../components/common/Badge/Badge';
@@ -74,10 +76,89 @@ export default function EquipmentDetails() {
   const [bookingSuccess, setBookingSuccess] = useState(null);
   const [bookingError, setBookingError] = useState(null);
 
+  // Reviews state
+  const [reviewsData, setReviewsData] = useState({ reviews: [], summary: null });
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+
+  // Waitlist state
+  const [waitlistStatus, setWaitlistStatus] = useState(null);
+  const [isWaitlistLoading, setIsWaitlistLoading] = useState(false);
+  const [waitlistMsg, setWaitlistMsg] = useState(null);
+
   // Numeric database ID mapping
   const numericEquipmentId = useMemo(() => {
     return parseInt(String(id).replace(/\D/g, ''), 10) || 1;
   }, [id]);
+
+  // Load reviews and waitlist status
+  useEffect(() => {
+    let isMounted = true;
+    async function loadReviewsAndWaitlist() {
+      setIsLoadingReviews(true);
+      try {
+        const res = await reviewService.getEquipmentReviews(numericEquipmentId);
+        if (isMounted && res && res.success) {
+          setReviewsData({ reviews: res.reviews || [], summary: res.summary || null });
+        }
+      } catch (e) {
+        console.warn('Reviews load error:', e);
+      } finally {
+        if (isMounted) setIsLoadingReviews(false);
+      }
+
+      if (isAuthenticated) {
+        try {
+          const wStatus = await waitlistService.getStatusForEquipment(numericEquipmentId);
+          if (isMounted && wStatus && wStatus.success) {
+            setWaitlistStatus(wStatus);
+          }
+        } catch (e) {
+          console.warn('Waitlist status error:', e);
+        }
+      }
+    }
+
+    loadReviewsAndWaitlist();
+    return () => {
+      isMounted = false;
+    };
+  }, [numericEquipmentId, isAuthenticated]);
+
+  const handleJoinWaitlist = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    setIsWaitlistLoading(true);
+    setWaitlistMsg(null);
+    try {
+      const res = await waitlistService.joinWaitlist({
+        equipmentId: numericEquipmentId,
+        notes: 'Joined via equipment details page'
+      });
+      setWaitlistMsg({ type: 'success', text: `You are #${res.position} in line! You will be notified automatically when available.` });
+      const updated = await waitlistService.getStatusForEquipment(numericEquipmentId);
+      if (updated && updated.success) setWaitlistStatus(updated);
+    } catch (err) {
+      setWaitlistMsg({ type: 'error', text: err.message || 'Failed to join waitlist.' });
+    } finally {
+      setIsWaitlistLoading(false);
+    }
+  };
+
+  const handleLeaveWaitlist = async () => {
+    setIsWaitlistLoading(true);
+    setWaitlistMsg(null);
+    try {
+      await waitlistService.leaveByEquipment(numericEquipmentId);
+      setWaitlistMsg({ type: 'info', text: 'You have left the waitlist for this equipment.' });
+      setWaitlistStatus({ is_on_waitlist: false, total_in_queue: Math.max(0, (waitlistStatus?.total_in_queue || 1) - 1) });
+    } catch (err) {
+      setWaitlistMsg({ type: 'error', text: err.message || 'Failed to leave waitlist.' });
+    } finally {
+      setIsWaitlistLoading(false);
+    }
+  };
 
   // Real-time date availability check
   useEffect(() => {
@@ -395,26 +476,153 @@ export default function EquipmentDetails() {
               </p>
             </div>
 
-            {/* Action Buttons: Request Equipment */}
+            {/* Action Buttons: Request Equipment or Waitlist */}
             <div className={styles.actionSection}>
-              <Button
-                variant={isAvailable ? 'primary' : 'secondary'}
-                size="lg"
-                fullWidth
-                disabled={!isAvailable}
-                onClick={handleOpenRequestModal}
-              >
-                {isAvailable ? 'Request Equipment' : 'Currently Unavailable (Waitlist)'}
-              </Button>
+              {isAvailable ? (
+                <>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    onClick={handleOpenRequestModal}
+                  >
+                    Request Equipment
+                  </Button>
+                  <p className={styles.actionSubtext}>
+                    Direct booking with real-time availability verification and partner handover coordination.
+                  </p>
+                </>
+              ) : (
+                <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '10px', border: '1px solid var(--slate-200)', marginTop: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: '#b45309', fontWeight: 700, fontSize: '0.9375rem' }}>
+                    <Clock size={18} />
+                    <span>Currently On Loan (Waitlist Open)</span>
+                  </div>
 
-              <p className={styles.actionSubtext}>
-                {isAvailable
-                  ? 'Direct booking with real-time availability verification and partner handover coordination.'
-                  : 'This equipment is currently allocated to an active care loan.'}
-              </p>
+                  {waitlistMsg && (
+                    <div style={{
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '6px',
+                      fontSize: '0.8125rem',
+                      marginBottom: '0.75rem',
+                      background: waitlistMsg.type === 'error' ? '#fef2f2' : waitlistMsg.type === 'success' ? '#f0fdf4' : '#eff6ff',
+                      color: waitlistMsg.type === 'error' ? '#991b1b' : waitlistMsg.type === 'success' ? '#166534' : '#1e40af',
+                      border: `1px solid ${waitlistMsg.type === 'error' ? '#fecaca' : waitlistMsg.type === 'success' ? '#bbf7d0' : '#bfdbfe'}`
+                    }}>
+                      {waitlistMsg.text}
+                    </div>
+                  )}
+
+                  {waitlistStatus?.is_on_waitlist ? (
+                    <div>
+                      <div style={{ background: '#f0fdf4', padding: '0.75rem', borderRadius: '6px', border: '1px solid #bbf7d0', color: '#166534', fontSize: '0.875rem', marginBottom: '0.75rem' }}>
+                        <strong>✓ You are on the waitlist (Position #{waitlistStatus.position || 1} of {waitlistStatus.total_in_queue || 1})</strong>
+                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#15803d' }}>
+                          We will notify you immediately once this equipment is returned and sanitized.
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        fullWidth
+                        onClick={handleLeaveWaitlist}
+                        isLoading={isWaitlistLoading}
+                      >
+                        Leave Waitlist
+                      </Button>
+                    </div>
+                  ) : (
+                    <div>
+                      <p style={{ fontSize: '0.8125rem', color: 'var(--slate-600)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
+                        Join the priority queue to receive an instant alert when this equipment returns from loan.
+                      </p>
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        fullWidth
+                        onClick={handleJoinWaitlist}
+                        isLoading={isWaitlistLoading}
+                      >
+                        Join Priority Waitlist ({waitlistStatus?.total_in_queue || 0} waiting)
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* PHASE 6 COMMUNITY REVIEWS & VERIFIED FEEDBACK SECTION  */}
+      {/* ======================================================== */}
+      <div style={{ marginTop: '3.5rem', borderTop: '1px solid var(--slate-200)', paddingTop: '2.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--navy-900)', margin: '0 0 0.25rem 0' }}>
+              Community Reviews & Ratings
+            </h2>
+            <p style={{ color: 'var(--slate-600)', fontSize: '0.875rem', margin: 0 }}>
+              Verified feedback from patients and caregivers who completed equipment loans.
+            </p>
+          </div>
+          {reviewsData.summary && Number(reviewsData.summary.total_reviews) > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#fef3c7', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #fde68a' }}>
+              <Star size={20} fill="#d97706" color="#d97706" />
+              <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#92400e' }}>
+                {Number(reviewsData.summary.average_rating || 0).toFixed(1)}
+              </span>
+              <span style={{ color: '#b45309', fontSize: '0.875rem', fontWeight: 600 }}>
+                ({reviewsData.summary.total_reviews} verified {Number(reviewsData.summary.total_reviews) === 1 ? 'review' : 'reviews'})
+              </span>
+            </div>
+          )}
+        </div>
+
+        {isLoadingReviews ? (
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--slate-500)' }}>
+            Loading verified reviews...
+          </div>
+        ) : reviewsData.reviews.length === 0 ? (
+          <div style={{ background: '#f8fafc', padding: '2.5rem 1.5rem', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--slate-200)' }}>
+            <Star size={36} color="var(--slate-300)" style={{ margin: '0 auto 0.75rem' }} />
+            <h4 style={{ color: 'var(--navy-900)', fontWeight: 700, marginBottom: '0.35rem' }}>No Community Reviews Yet</h4>
+            <p style={{ color: 'var(--slate-500)', fontSize: '0.875rem', maxWidth: '440px', margin: '0 auto' }}>
+              Reviews can be submitted by verified community borrowers once their equipment loan has been returned and inspected.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
+            {reviewsData.reviews.map((rev) => (
+              <div key={rev.id} style={{ background: '#ffffff', borderRadius: '10px', padding: '1.25rem', border: '1px solid var(--slate-200)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <div style={{ fontWeight: 700, color: 'var(--navy-900)', fontSize: '0.9375rem' }}>
+                    {rev.reviewer_name || 'Community Borrower'}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        size={14}
+                        fill={s <= rev.rating ? '#eab308' : 'none'}
+                        color={s <= rev.rating ? '#eab308' : 'var(--slate-300)'}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--slate-400)', marginBottom: '0.75rem' }}>
+                  Verified loan • {new Date(rev.created_at).toLocaleDateString()}
+                </div>
+                {rev.comment && (
+                  <p style={{ fontSize: '0.875rem', color: 'var(--slate-700)', lineHeight: 1.5, margin: 0 }}>
+                    "{rev.comment}"
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ======================================================== */}

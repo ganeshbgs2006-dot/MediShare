@@ -21,3 +21,4 @@ router.patch('/:id/status', bookingController.updateStatus);
 router.patch('/:id/cancel', bookingController.cancelBooking);
 
 export default router;
+

@@ -56,6 +56,7 @@ export const env = {
   port: parseInt(process.env.PORT, 10) || 5000,
   nodeEnv: process.env.NODE_ENV || 'development',
   isDev: (process.env.NODE_ENV || 'development') === 'development',
+  isProd: (process.env.NODE_ENV || 'development') === 'production',
   
   db: {
     host: process.env.DB_HOST || 'localhost',
@@ -73,4 +74,39 @@ export const env = {
   
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173'
 };
+
+/**
+ * Validates configuration integrity. In production, terminates early
+ * if insecure default placeholders or missing secrets are detected.
+ */
+export function validateEnvironment() {
+  if (env.isProd) {
+    const errors = [];
+    if (!process.env.JWT_SECRET || process.env.JWT_SECRET.includes('change_me')) {
+      errors.push('Production JWT_SECRET must be set to an authentic secret (minimum 32 characters) and cannot use default template.');
+    }
+    if (!process.env.DB_PASSWORD) {
+      errors.push('Production DB_PASSWORD must be explicitly configured.');
+    }
+    if (process.env.DB_USER === 'root') {
+      errors.push('Production database must use a dedicated least-privileged user rather than the MySQL root account.');
+    }
+    if (!process.env.CLIENT_URL || process.env.CLIENT_URL.includes('localhost')) {
+      errors.push('Production CLIENT_URL must be configured to the actual production web app domain rather than localhost.');
+    }
+
+    if (errors.length > 0) {
+      console.error('====================================================');
+      console.error('❌ CRITICAL CONFIGURATION ERROR (PRODUCTION MODE):');
+      errors.forEach(e => console.error(`  - ${e}`));
+      console.error('====================================================');
+      throw new Error(`Production startup aborted due to ${errors.length} security configuration issue(s).`);
+    }
+  }
+}
+
+// Validate in production
+if (env.isProd) {
+  validateEnvironment();
+}
 

@@ -16,3 +16,4 @@ router.get('/:id', equipmentController.getEquipmentById);
 router.get('/:id/availability', equipmentController.checkAvailability);
 
 export default router;
+

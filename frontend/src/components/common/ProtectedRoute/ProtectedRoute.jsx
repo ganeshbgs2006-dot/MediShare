@@ -69,3 +69,4 @@ export default function ProtectedRoute({ children, allowedRoles = null }) {
 
   return children;
 }
+
