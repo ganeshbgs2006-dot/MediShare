@@ -4,6 +4,12 @@
   flex-direction: column;
 }
 
+.imageLink {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
 .imageContainer {
   position: relative;
   width: 100%;

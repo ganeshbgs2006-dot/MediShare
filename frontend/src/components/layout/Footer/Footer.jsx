@@ -56,11 +56,11 @@ export default function Footer() {
           <div className={styles.linkCol}>
             <h4 className={styles.colTitle}>Equipment Categories</h4>
             <ul className={styles.linkList}>
-              <li><Link to="/marketplace?category=mobility">Mobility Aids & Wheelchairs</Link></li>
-              <li><Link to="/marketplace?category=respiratory">Respiratory & Oxygen Concentrators</Link></li>
-              <li><Link to="/marketplace?category=beds">Hospital Beds & Pressure Relief</Link></li>
-              <li><Link to="/marketplace?category=monitoring">Vital Signs & Cardiac Monitors</Link></li>
-              <li><Link to="/marketplace?category=pediatric">Pediatric & Rehabilitation Tools</Link></li>
+              <li><Link to="/marketplace?category=Wheelchairs">Wheelchairs</Link></li>
+              <li><Link to="/marketplace?category=Walking+Frames+%26+Mobility+Aids">Walking Frames & Mobility Aids</Link></li>
+              <li><Link to="/marketplace?category=Crutches">Crutches & Walking Sticks</Link></li>
+              <li><Link to="/marketplace?category=Hospital+Beds">Hospital Beds & Mattresses</Link></li>
+              <li><Link to="/marketplace?category=Other+Assistive+Equipment">Oxygen & Assistive Care</Link></li>
             </ul>
           </div>
 

@@ -37,9 +37,11 @@ export const CONDITION_OPTIONS = [
 
 export const SORT_OPTIONS = [
   { value: 'default', label: 'Default (Featured)' },
+  { value: 'date-desc', label: 'Newest First' },
+  { value: 'price-asc', label: 'Price: Low to High' },
+  { value: 'price-desc', label: 'Price: High to Low' },
   { value: 'name-asc', label: 'Name: A to Z' },
-  { value: 'name-desc', label: 'Name: Z to A' },
-  { value: 'date-desc', label: 'Recently Added' }
+  { value: 'name-desc', label: 'Name: Z to A' }
 ];
 
 export const DEMO_EQUIPMENT_DATA = [

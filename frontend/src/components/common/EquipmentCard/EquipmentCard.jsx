@@ -62,36 +62,38 @@ export default function EquipmentCard({ item }) {
   return (
     <Card hoverable className={styles.equipmentCard}>
       {/* Equipment Image Container */}
-      <div className={styles.imageContainer}>
-        <img
-          src={imgSrc}
-          alt={displayName}
-          className={styles.image}
-          loading="lazy"
-          onError={() => setImgSrc(FALLBACK_SVG)}
-        />
+      <Link to={`/equipment/${id}`} className={styles.imageLink} aria-label={`View details for ${displayName}`}>
+        <div className={styles.imageContainer}>
+          <img
+            src={imgSrc}
+            alt={displayName}
+            className={styles.image}
+            loading="lazy"
+            onError={() => setImgSrc(FALLBACK_SVG)}
+          />
 
-        {/* Sharing Type Pill (Top Left) */}
-        <div className={styles.sharingBadge}>
-          <Badge variant={sharingType} size="sm">
-            {sharingLabel || (sharingType === 'free' ? 'Free Lending' : sharingType === 'rental' ? 'Paid Rental' : 'Donation')}
-          </Badge>
+          {/* Sharing Type Pill (Top Left) */}
+          <div className={styles.sharingBadge}>
+            <Badge variant={sharingType} size="sm">
+              {sharingLabel || (sharingType === 'free' ? 'Free Lending' : sharingType === 'rental' ? 'Paid Rental' : 'Donation')}
+            </Badge>
+          </div>
+
+          {/* Availability Badge (Top Right) */}
+          <div className={styles.statusBadge}>
+            <Badge
+              variant={isAvailable ? 'available' : 'borrowed'}
+              size="sm"
+              dot
+            >
+              {availabilityLabel || (isAvailable ? 'Available' : 'Currently Unavailable')}
+            </Badge>
+          </div>
+
+          {/* Sample Listing Tag */}
+          <span className={styles.demoWatermark}>Sample Listing</span>
         </div>
-
-        {/* Availability Badge (Top Right) */}
-        <div className={styles.statusBadge}>
-          <Badge
-            variant={isAvailable ? 'available' : 'borrowed'}
-            size="sm"
-            dot
-          >
-            {availabilityLabel || (isAvailable ? 'Available' : 'Currently Unavailable')}
-          </Badge>
-        </div>
-
-        {/* Sample Listing Tag */}
-        <span className={styles.demoWatermark}>Sample Listing</span>
-      </div>
+      </Link>
 
       <CardBody className={styles.body}>
         {/* Category & Condition Badges */}

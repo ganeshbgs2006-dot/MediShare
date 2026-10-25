@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Search,
@@ -27,13 +27,12 @@ import {
 import Button from '../../components/common/Button/Button';
 import Badge from '../../components/common/Badge/Badge';
 import Card, { CardBody } from '../../components/common/Card/Card';
-import Modal from '../../components/common/Modal/Modal';
 import EquipmentCard from '../../components/common/EquipmentCard/EquipmentCard';
 import {
   SAMPLE_EQUIPMENT_CATEGORIES,
-  SAMPLE_FEATURED_EQUIPMENT,
   IMPACT_METRICS
 } from '../../data/sampleEquipment';
+import { getFeaturedEquipment } from '../../services/equipmentService';
 import styles from './Home.module.css';
 
 // Category icon mapper helper
@@ -67,9 +66,6 @@ export default function Home() {
   // Filter tab for featured equipment
   const [featuredTab, setFeaturedTab] = useState('all');
 
-  // Quick View Modal state
-  const [selectedItem, setSelectedItem] = useState(null);
-
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     const params = new URLSearchParams();
@@ -79,11 +75,15 @@ export default function Home() {
     navigate(`/marketplace?${params.toString()}`);
   };
 
-  // Filter sample equipment based on active tab
-  const filteredEquipment = SAMPLE_FEATURED_EQUIPMENT.filter((item) => {
-    if (featuredTab === 'all') return true;
-    return item.sharingType === featuredTab;
-  });
+  // Featured equipment from single unified service
+  const featuredList = useMemo(() => getFeaturedEquipment(6), []);
+
+  const filteredEquipment = useMemo(() => {
+    return featuredList.filter((item) => {
+      if (featuredTab === 'all') return true;
+      return item.sharingType === featuredTab;
+    });
+  }, [featuredList, featuredTab]);
 
   return (
     <div className={styles.homeContainer}>
@@ -215,7 +215,7 @@ export default function Home() {
                 key={cat.id}
                 hoverable
                 className={styles.categoryCard}
-                onClick={() => navigate(`/marketplace?category=${cat.id}`)}
+                onClick={() => navigate(`/marketplace?category=${encodeURIComponent(cat.categoryName)}`)}
               >
                 <div className={styles.categoryIconWrap}>
                   {getCategoryIcon(cat.iconName)}
@@ -223,7 +223,6 @@ export default function Home() {
                 <div className={styles.categoryContent}>
                   <div className={styles.categoryHeader}>
                     <h3 className={styles.categoryTitle}>{cat.name}</h3>
-                    <span className={styles.categoryCountBadge}>{cat.itemCount} items</span>
                   </div>
                   <p className={styles.categoryDesc}>{cat.description}</p>
                   <span className={styles.categoryExploreLink}>
@@ -289,7 +288,6 @@ export default function Home() {
               <EquipmentCard
                 key={item.id}
                 item={item}
-                onQuickView={(itemData) => setSelectedItem(itemData)}
               />
             ))}
           </div>
@@ -557,79 +555,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* ======================================================== */}
-      {/* QUICK VIEW DETAILS MODAL                                 */}
-      {/* ======================================================== */}
-      {selectedItem && (
-        <Modal
-          isOpen={Boolean(selectedItem)}
-          onClose={() => setSelectedItem(null)}
-          title={selectedItem.title}
-          maxWidth="640px"
-        >
-          <div className={styles.modalContent}>
-            <img
-              src={selectedItem.imageUrl}
-              alt={selectedItem.title}
-              className={styles.modalImage}
-            />
-
-            <div className={styles.modalMeta}>
-              <Badge variant={selectedItem.sharingType} size="sm">
-                {selectedItem.sharingLabel}
-              </Badge>
-              <Badge
-                variant={selectedItem.availabilityStatus === 'available' ? 'available' : 'borrowed'}
-                size="sm"
-                dot
-              >
-                {selectedItem.availabilityStatus === 'available' ? 'Available' : 'Allocated'}
-              </Badge>
-              <span className={styles.modalCondition}>
-                Condition: <strong>{selectedItem.condition} ({selectedItem.conditionScore}/10)</strong>
-              </span>
-            </div>
-
-            <p className={styles.modalDesc}>{selectedItem.description}</p>
-
-            <h4 className={styles.modalSubheading}>Device Specifications & Accessories:</h4>
-            <ul className={styles.modalFeatures}>
-              {selectedItem.features.map((feat, idx) => (
-                <li key={idx}>
-                  <CheckCircle2 size={16} color="var(--teal-600)" />
-                  <span>{feat}</span>
-                </li>
-              ))}
-            </ul>
-
-            <div className={styles.modalOwnerCard}>
-              <div className={styles.modalOwnerHeader}>
-                <ShieldCheck size={18} color="var(--teal-600)" />
-                <strong>Listed by: {selectedItem.owner.name}</strong>
-              </div>
-              <p className={styles.modalOwnerSub}>
-                Verified Equipment Partner • {selectedItem.owner.rating} ★ ({selectedItem.owner.reviewCount} verified reviews) • Location: {selectedItem.location}
-              </p>
-            </div>
-
-            <div className={styles.modalFooterActions}>
-              <Button variant="outline" onClick={() => setSelectedItem(null)}>
-                Close Preview
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  setSelectedItem(null);
-                  navigate(`/marketplace?item=${selectedItem.id}`);
-                }}
-              >
-                Proceed to Request Form
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 }

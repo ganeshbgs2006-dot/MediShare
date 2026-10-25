@@ -15,6 +15,13 @@ export function getAllEquipment() {
 }
 
 /**
+ * Retrieve a curated list of featured equipment for homepage showcase
+ */
+export function getFeaturedEquipment(limit = 6) {
+  return DEMO_EQUIPMENT_DATA.slice(0, limit);
+}
+
+/**
  * Find a specific equipment record by its unique ID
  */
 export function getEquipmentById(id) {
@@ -71,7 +78,7 @@ export function filterAndSortEquipment({
 } = {}) {
   let results = [...DEMO_EQUIPMENT_DATA];
 
-  // 1. Text Search across name, category, description, and service area
+  // 1. Text Search across name, category, description, service area, condition notes, and accessories
   const trimmedQuery = query.trim().toLowerCase();
   if (trimmedQuery) {
     results = results.filter((item) => {
@@ -79,7 +86,11 @@ export function filterAndSortEquipment({
       const matchCategory = item.category.toLowerCase().includes(trimmedQuery);
       const matchDesc = item.description.toLowerCase().includes(trimmedQuery);
       const matchArea = item.serviceArea.toLowerCase().includes(trimmedQuery);
-      return matchName || matchCategory || matchDesc || matchArea;
+      const matchCondition = item.conditionDetails?.toLowerCase().includes(trimmedQuery);
+      const matchAccessories = item.includedAccessories?.some((acc) =>
+        acc.toLowerCase().includes(trimmedQuery)
+      );
+      return matchName || matchCategory || matchDesc || matchArea || matchCondition || matchAccessories;
     });
   }
 
@@ -118,6 +129,10 @@ export function filterAndSortEquipment({
     results.sort((a, b) => b.name.localeCompare(a.name));
   } else if (sort === 'date-desc') {
     results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  } else if (sort === 'price-asc') {
+    results.sort((a, b) => a.price - b.price);
+  } else if (sort === 'price-desc') {
+    results.sort((a, b) => b.price - a.price);
   }
   // 'default' retains curated featured order
 
