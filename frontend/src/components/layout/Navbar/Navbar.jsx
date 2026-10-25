@@ -8,14 +8,17 @@ import {
   Search,
   ShieldCheck,
   User,
-  Info
+  Info,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
 import Button from '../../common/Button/Button';
 import styles from './Navbar.module.css';
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
@@ -66,24 +69,48 @@ export default function Navbar() {
 
           {/* Desktop Call To Actions */}
           <div className={styles.actions}>
-            <Link to="/register?role=owner">
-              <Button
-                variant="outline"
-                size="sm"
-                leftIcon={<PlusCircle size={16} />}
-              >
-                List Equipment
-              </Button>
-            </Link>
-            <Link to="/login">
-              <Button
-                variant="primary"
-                size="sm"
-                leftIcon={<User size={16} />}
-              >
-                Sign In
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <div className={styles.userProfileStrip}>
+                <div className={styles.userInfo}>
+                  <div className={styles.userAvatar}>
+                    <User size={14} />
+                  </div>
+                  <div className={styles.userMeta}>
+                    <span className={styles.userName}>{user.fullName}</span>
+                    <span className={styles.userRoleTag}>{user.role}</span>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={logout}
+                  leftIcon={<LogOut size={14} />}
+                >
+                  Sign Out
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Link to="/register?role=owner">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<PlusCircle size={16} />}
+                  >
+                    List Equipment
+                  </Button>
+                </Link>
+                <Link to="/login">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    leftIcon={<User size={16} />}
+                  >
+                    Sign In
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Hamburger Button */}
@@ -116,16 +143,38 @@ export default function Navbar() {
               <span>Community Impact</span>
             </a>
             <div className={styles.mobileActions}>
-              <Link to="/register?role=owner" onClick={closeMobileMenu}>
-                <Button variant="outline" fullWidth leftIcon={<PlusCircle size={16} />}>
-                  List Equipment
-                </Button>
-              </Link>
-              <Link to="/login" onClick={closeMobileMenu}>
-                <Button variant="primary" fullWidth leftIcon={<User size={16} />}>
-                  Sign In / Register
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <div className={styles.mobileUserBadge}>
+                    <User size={16} />
+                    <span>Signed in as <strong>{user.fullName}</strong> ({user.role})</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    fullWidth
+                    onClick={() => {
+                      logout();
+                      closeMobileMenu();
+                    }}
+                    leftIcon={<LogOut size={16} />}
+                  >
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/register?role=owner" onClick={closeMobileMenu}>
+                    <Button variant="outline" fullWidth leftIcon={<PlusCircle size={16} />}>
+                      List Equipment
+                    </Button>
+                  </Link>
+                  <Link to="/login" onClick={closeMobileMenu}>
+                    <Button variant="primary" fullWidth leftIcon={<User size={16} />}>
+                      Sign In / Register
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}

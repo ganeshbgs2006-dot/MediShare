@@ -173,6 +173,73 @@
   }
 }
 
+/* Authenticated User Status Strip */
+.userProfileStrip {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--slate-100);
+  padding: 0.3rem 0.75rem 0.3rem 0.4rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+}
+
+.userAvatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--teal-600);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.userMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.userName {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--navy-900);
+  max-width: 130px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userRoleTag {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--teal-800);
+  background: var(--teal-100);
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--radius-full);
+}
+
+.mobileUserBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--slate-700);
+  background: var(--slate-100);
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 0.5rem;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-5px); }
   to { opacity: 1; transform: translateY(0); }

@@ -1,10 +1,13 @@
 import React from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/layout/Navbar/Navbar';
 import Footer from './components/layout/Footer/Footer';
 import Home from './pages/Home/Home';
 import Marketplace from './pages/Marketplace/Marketplace';
 import EquipmentDetails from './pages/EquipmentDetails/EquipmentDetails';
+import Login from './pages/Auth/Login';
+import Register from './pages/Auth/Register';
 import Button from './components/common/Button/Button';
 import Card, { CardBody } from './components/common/Card/Card';
 import { ArrowLeft, Construction } from 'lucide-react';
@@ -59,57 +62,41 @@ function ComingSoonPage({ title, phase, description }) {
 
 export default function App() {
   return (
-    <div className="app">
-      <Navbar />
-      <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/equipment/:id" element={<EquipmentDetails />} />
-          <Route
-            path="/login"
-            element={
-              <ComingSoonPage
-                title="User Authentication"
-                phase="Phase 3"
-                description="Secure login with JWT tokens, password hashing with bcrypt, role-based access control (Seeker, Owner, Admin) is scheduled for Phase 3."
-              />
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <ComingSoonPage
-                title="Account Registration"
-                phase="Phase 3"
-                description="Seeker registration and Owner partner application workflow with pending verification is scheduled for Phase 3."
-              />
-            }
-          />
-          <Route
-            path="/admin/login"
-            element={
-              <ComingSoonPage
-                title="Administrative Console"
-                phase="Phase 8"
-                description="Admin credential verification, owner approval moderation, dispute investigations, and audit logs are scheduled for Phase 8."
-              />
-            }
-          />
-          <Route
-            path="*"
-            element={
-              <ComingSoonPage
-                title="Page Not Found"
-                phase="Phase 1"
-                description="The page you are looking for does not exist. Use the button below to return to the MediShare homepage."
-              />
-            }
-          />
-        </Routes>
-      </main>
-      <Footer />
-    </div>
+    <AuthProvider>
+      <div className="app">
+        <Navbar />
+        <main>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/equipment/:id" element={<EquipmentDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route
+              path="/admin/login"
+              element={
+                <ComingSoonPage
+                  title="Administrative Console"
+                  phase="Phase 8"
+                  description="Admin credential verification, owner approval moderation, dispute investigations, and audit logs are scheduled for Phase 8."
+                />
+              }
+            />
+            <Route
+              path="*"
+              element={
+                <ComingSoonPage
+                  title="Page Not Found"
+                  phase="Phase 1"
+                  description="The page you are looking for does not exist. Use the button below to return to the MediShare homepage."
+                />
+              }
+            />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </AuthProvider>
   );
 }
 
