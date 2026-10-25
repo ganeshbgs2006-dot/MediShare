@@ -23,12 +23,10 @@ export default function Navbar() {
   return (
     <>
       {/* Non-production sample data disclaimer banner */}
-      <div className={styles.topNotice}>
+      <div className={styles.topNotice} role="region" aria-label="Demonstration Notice">
         <div className={styles.noticeContent}>
-          <span className={styles.noticeTag}>Academic Project</span>
-          <span>
-            MediShare Demonstration Platform — All listed medical equipment and profiles are sample records for testing.
-          </span>
+          <Info size={14} className={styles.noticeIcon} aria-hidden="true" />
+          <span>MediShare Demo — Sample listings shown for demonstration.</span>
         </div>
       </div>
 

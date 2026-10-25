@@ -186,27 +186,28 @@ export const SAMPLE_FEATURED_EQUIPMENT = [
 
 export const IMPACT_METRICS = [
   {
-    id: 'saved',
-    value: '₹14.8 Lakhs',
-    label: 'Healthcare Costs Saved',
-    description: 'Families relieved from purchasing expensive single-use recovery devices.'
+    id: 'accessible',
+    tag: 'Community Access',
+    title: 'Making Equipment More Accessible',
+    description: 'Connecting recovering patients and families with essential recovery devices within their local neighborhoods.'
   },
   {
-    id: 'items',
-    value: '340+',
-    label: 'Medical Devices In Circulation',
-    description: 'Certified wheelchairs, beds, monitors, and oxygen systems in active sharing.'
+    id: 'sharing',
+    tag: 'Peer-To-Peer Care',
+    title: 'Supporting Community Sharing',
+    description: 'Enabling local owners, clinics, and donors to share idle equipment safely without commercial barriers.'
   },
   {
-    id: 'recovery',
-    value: '890+',
-    label: 'Patient Recovery Lifecycles',
-    description: 'Direct community patient care journeys completed with documented safety.'
+    id: 'reuse',
+    tag: 'Sustainability',
+    title: 'Encouraging Responsible Reuse',
+    description: 'Extending the functional lifecycle of durable healthcare equipment to minimize unnecessary waste.'
   },
   {
-    id: 'landfill',
-    value: '4.2 Tons',
-    label: 'E-Waste & Scrap Diverted',
-    description: 'Durable medical hardware restored, maintained, and given second life.'
+    id: 'condition',
+    tag: 'Safety Checklists',
+    title: 'Documenting Equipment Condition',
+    description: 'Promoting dual-party handover and return inspection checklists to build trust across every exchange.'
   }
 ];
+

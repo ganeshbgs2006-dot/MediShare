@@ -95,6 +95,16 @@
   height: 2.7rem;
 }
 
+.titleLink {
+  color: var(--navy-900);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.titleLink:hover {
+  color: var(--teal-700);
+}
+
 .description {
   font-size: 0.8125rem;
   color: var(--slate-600);
@@ -139,31 +149,17 @@
   flex-shrink: 0;
 }
 
-.ownerName {
-  font-weight: 600;
-  color: var(--navy-900);
+.ownerText {
+  font-size: 0.8125rem;
+  color: var(--slate-600);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 140px;
 }
 
-.ratingBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  font-size: 0.75rem;
-  font-weight: 700;
+.ownerName {
+  font-weight: 600;
   color: var(--navy-900);
-  margin-left: auto;
-  background-color: var(--slate-100);
-  padding: 0.15rem 0.4rem;
-  border-radius: var(--radius-sm);
-}
-
-.reviewCount {
-  font-weight: 400;
-  color: var(--slate-500);
 }
 
 .footer {
@@ -173,6 +169,11 @@
   justify-content: space-between;
   background-color: var(--slate-50);
   border-top: 1px solid var(--border-color);
+  gap: 0.75rem;
+}
+
+.actionLink {
+  text-decoration: none;
 }
 
 .priceContainer {
@@ -212,3 +213,4 @@
   align-items: center;
   gap: 0.5rem;
 }
+

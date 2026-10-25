@@ -60,3 +60,4 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 - `frontend/src/components/common/`: Reusable components used across pages (`Button`, `Badge`, `Card`, `Input`, `Modal`, `EquipmentCard`).
 - `frontend/src/components/layout/`: Global layout components (`Navbar` with mobile drawer and `Footer` with trust highlights).
 - `frontend/src/pages/Home/`: The responsive landing page showcasing search, clinical categories, featured equipment, workflow steps, safety architecture, and community impact.
+

@@ -45,3 +45,4 @@ The MediShare UI is designed with a healthcare-focused aesthetic:
 2. **Zero-Trust Roles**: The backend extracts user role (`seeker`, `owner`, `admin`) and user ID strictly from cryptographically signed JWT tokens, never from client request bodies.
 3. **Password Security**: Standard bcrypt hashing with salt rounds (factor 10) prevents plain-text exposure.
 4. **Isolated Media Access**: Private evidence photos recorded during equipment handover/return are protected and only accessible by authorized booking participants and system administrators.
+

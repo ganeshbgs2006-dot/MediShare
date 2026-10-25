@@ -75,7 +75,7 @@ export default function Home() {
     const params = new URLSearchParams();
     if (searchQuery.trim()) params.append('q', searchQuery.trim());
     if (selectedCategory !== 'all') params.append('category', selectedCategory);
-    if (selectedMode !== 'all') params.append('mode', selectedMode);
+    if (selectedMode !== 'all') params.append('sharingType', selectedMode);
     navigate(`/marketplace?${params.toString()}`);
   };
 
@@ -184,13 +184,13 @@ export default function Home() {
       {/* ======================================================== */}
       {/* 2. STATS & COMMUNITY METRICS TICKER                     */}
       {/* ======================================================== */}
-      <section className={styles.statsStrip}>
+      <section className={styles.statsStrip} aria-label="Community Values">
         <div className={`container ${styles.statsGrid}`}>
-          {IMPACT_METRICS.map((metric) => (
-            <div key={metric.id} className={styles.statCard}>
-              <span className={styles.statValue}>{metric.value}</span>
-              <span className={styles.statLabel}>{metric.label}</span>
-              <p className={styles.statDescription}>{metric.description}</p>
+          {IMPACT_METRICS.map((pillar) => (
+            <div key={pillar.id} className={styles.statCard}>
+              <span className={styles.statPillarTag}>{pillar.tag}</span>
+              <h3 className={styles.statPillarTitle}>{pillar.title}</h3>
+              <p className={styles.statDescription}>{pillar.description}</p>
             </div>
           ))}
         </div>
@@ -298,7 +298,7 @@ export default function Home() {
           <div className={styles.viewAllRow}>
             <Link to="/marketplace">
               <Button variant="secondary" size="lg" rightIcon={<ArrowRight size={18} />}>
-                Explore All 120+ Listings in Marketplace
+                Explore All Demonstration Equipment in Marketplace
               </Button>
             </Link>
           </div>
@@ -633,3 +633,4 @@ export default function Home() {
     </div>
   );
 }
+

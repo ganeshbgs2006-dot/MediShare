@@ -38,3 +38,4 @@ export function CardBody({ children, className = '', ...props }) {
 export function CardFooter({ children, className = '', ...props }) {
   return <div className={`${styles.footer} ${className}`} {...props}>{children}</div>;
 }
+

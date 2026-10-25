@@ -3,6 +3,8 @@ import { Routes, Route, Link } from 'react-router-dom';
 import Navbar from './components/layout/Navbar/Navbar';
 import Footer from './components/layout/Footer/Footer';
 import Home from './pages/Home/Home';
+import Marketplace from './pages/Marketplace/Marketplace';
+import EquipmentDetails from './pages/EquipmentDetails/EquipmentDetails';
 import Button from './components/common/Button/Button';
 import Card, { CardBody } from './components/common/Card/Card';
 import { ArrowLeft, Construction } from 'lucide-react';
@@ -62,16 +64,8 @@ export default function App() {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route
-            path="/marketplace"
-            element={
-              <ComingSoonPage
-                title="Full Equipment Marketplace"
-                phase="Phase 2"
-                description="The complete equipment search engine, faceted filters (category, availability, distance, price), sorting, and equipment details view are scheduled next in Phase 2."
-              />
-            }
-          />
+          <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/equipment/:id" element={<EquipmentDetails />} />
           <Route
             path="/login"
             element={
@@ -118,3 +112,4 @@ export default function App() {
     </div>
   );
 }
+
