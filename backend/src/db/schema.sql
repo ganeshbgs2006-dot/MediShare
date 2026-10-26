@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS equipment (
   availability_status ENUM('available', 'reserved', 'on_loan', 'maintenance', 'retired') NOT NULL DEFAULT 'available',
   service_area VARCHAR(150) NOT NULL,
   image_url VARCHAR(500) NULL,
+  video_url VARCHAR(500) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,

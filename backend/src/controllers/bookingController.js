@@ -1,9 +1,10 @@
 import { bookingModel } from '../models/bookingModel.js';
 import { equipmentModel } from '../models/equipmentModel.js';
 import { userModel } from '../models/userModel.js';
+import { conditionLogModel } from '../models/conditionLogModel.js';
 import { notificationService } from '../services/notificationService.js';
 import { waitlistModel } from '../models/waitlistModel.js';
-import { getPool } from '../config/db.js';
+import { getPool, query } from '../config/db.js';
 
 export const bookingController = {
   /**
@@ -15,7 +16,17 @@ export const bookingController = {
 
     try {
       const seekerId = req.user.id;
+      const userRole = req.user.role;
       const { equipmentId, startDate, endDate, seekerMessage } = req.body;
+
+      // 0. Role enforcement: Only seekers and admins can submit equipment loan requests
+      if (userRole !== 'seeker' && userRole !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          error: 'Only registered borrowers/seekers can submit equipment loan requests. Partner accounts manage inventory and cannot book equipment.',
+          code: 'SEEKER_ROLE_REQUIRED'
+        });
+      }
 
       // 1. Input validations
       if (!equipmentId) {
@@ -358,6 +369,26 @@ export const bookingController = {
             error: `Cannot complete return for booking in '${booking.status}' status.`
           });
         }
+
+        // STRICT MANDATORY RETURN VIDEO VERIFICATION:
+        // BOTH seeker and owner return videos are required before final return closure!
+        if (!isAdmin) {
+          const missingSeeker = !booking.seeker_return_video_url;
+          const missingOwner = !booking.owner_return_video_url;
+
+          if (missingSeeker || missingOwner) {
+            return res.status(400).json({
+              success: false,
+              error: 'Mandatory return condition video recordings from BOTH seeker and owner are required before return can be finalized.',
+              code: 'RETURN_VIDEOS_REQUIRED',
+              missingSeekerVideo: missingSeeker,
+              missingOwnerVideo: missingOwner,
+              seekerVideoSubmitted: Boolean(booking.seeker_return_video_url),
+              ownerVideoSubmitted: Boolean(booking.owner_return_video_url)
+            });
+          }
+        }
+
         const updated = await bookingModel.updateStatus(id, 'returned', { handoverNotes });
 
         try {
@@ -449,6 +480,118 @@ export const bookingController = {
         success: true,
         message: 'Booking has been cancelled.',
         booking: updated
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * Submit return condition inspection video and notes (Seeker or Owner)
+   */
+  async submitReturnInspection(req, res, next) {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+      const { videoUrl, notes, conditionGrade = 'Good', isDisputed = false, disputeReason } = req.body;
+
+      if (!videoUrl || !videoUrl.trim()) {
+        return res.status(400).json({
+          success: false,
+          error: 'A recorded return condition video URL or file is required.'
+        });
+      }
+
+      const validConditions = ['Good', 'Fair', 'Needs Inspection'];
+      if (!validConditions.includes(conditionGrade)) {
+        return res.status(400).json({
+          success: false,
+          error: `Invalid condition grade. Must be one of: ${validConditions.join(', ')}`
+        });
+      }
+
+      if (isDisputed && (!disputeReason || !disputeReason.trim())) {
+        return res.status(400).json({
+          success: false,
+          error: 'A dispute explanation is required when reporting an issue or damage.'
+        });
+      }
+
+      const booking = await bookingModel.findById(id);
+      if (!booking) {
+        return res.status(404).json({ success: false, error: 'Booking not found.' });
+      }
+
+      const isSeeker = Number(booking.seeker_id) === Number(userId);
+      const isOwner = Number(booking.owner_id) === Number(userId);
+      const isAdmin = req.user.role === 'admin';
+
+      if (!isSeeker && !isOwner && !isAdmin) {
+        return res.status(403).json({
+          success: false,
+          error: 'Forbidden: You are not a party to this booking.'
+        });
+      }
+
+      const userRole = isSeeker ? 'seeker' : 'owner';
+
+      // Submit return inspection to booking
+      const updatedBooking = await bookingModel.submitReturnInspection(id, {
+        userRole,
+        videoUrl: videoUrl.trim(),
+        notes: notes ? notes.trim() : null,
+        conditionGrade,
+        isDisputed: Boolean(isDisputed),
+        disputeReason: disputeReason ? disputeReason.trim() : null
+      });
+
+      // Insert condition log entry
+      try {
+        await conditionLogModel.create({
+          bookingId: id,
+          equipmentId: booking.equipment_id,
+          loggedBy: userId,
+          stage: 'return',
+          conditionGrade,
+          notes: notes ? notes.trim() : (isSeeker ? 'Seeker return verification' : 'Owner return verification'),
+          verifiedBySeeker: isSeeker,
+          verifiedByOwner: isOwner || isAdmin,
+          isDisputed: Boolean(isDisputed),
+          disputeReason: isDisputed ? disputeReason.trim() : null
+        });
+      } catch (logErr) {
+        console.warn('[BOOKING] Condition log create error:', logErr.message);
+      }
+
+      // Record in equipment_media as return evidence
+      try {
+        await query(
+          `INSERT INTO equipment_media (equipment_id, booking_id, media_type, file_url, caption, stage) VALUES (?, ?, 'video', ?, ?, 'return_evidence')`,
+          [booking.equipment_id, id, videoUrl.trim(), `${isSeeker ? 'Seeker' : 'Owner'} Return Condition Video`]
+        );
+      } catch (mediaErr) {
+        console.warn('[BOOKING] Equipment media insert error:', mediaErr.message);
+      }
+
+      // Notify the counterparty
+      try {
+        const counterpartyId = isSeeker ? booking.owner_id : booking.seeker_id;
+        const senderName = req.user.fullName || req.user.full_name || (isSeeker ? 'Borrower' : 'Equipment Owner');
+        await notificationService.notifyUser(counterpartyId, {
+          type: isDisputed ? 'return_disputed' : 'return_video_submitted',
+          title: isDisputed ? 'Condition Dispute Raised on Return' : 'Return Condition Video Submitted',
+          message: `${senderName} has submitted return inspection evidence with condition rated "${conditionGrade}".${isDisputed ? ` Note: A dispute was flagged: "${disputeReason}".` : ''}`,
+          relatedEntityType: 'booking',
+          relatedEntityId: id
+        });
+      } catch (notifErr) {
+        console.warn('[BOOKING] Return notification error:', notifErr.message);
+      }
+
+      return res.status(200).json({
+        success: true,
+        booking: updatedBooking,
+        message: 'Return condition inspection video and verification submitted successfully.'
       });
     } catch (err) {
       next(err);

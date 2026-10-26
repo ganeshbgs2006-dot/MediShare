@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -17,9 +17,15 @@ import {
   Sparkles,
   Star,
   User,
+  Video,
+  VideoOff,
+  RefreshCw,
+  CalendarPlus,
+  Check,
+  Truck,
   ArrowRight
 } from 'lucide-react';
-import { getEquipmentById } from '../../services/equipmentService';
+import { getEquipmentById, equipmentService } from '../../services/equipmentService';
 import { bookingService } from '../../services/bookingService';
 import { reviewService } from '../../services/reviewService';
 import { waitlistService } from '../../services/waitlistService';
@@ -51,11 +57,51 @@ export default function EquipmentDetails() {
   const { user, isAuthenticated } = useAuth();
 
   // Retrieve equipment record
-  const item = useMemo(() => getEquipmentById(id), [id]);
+  const [item, setItem] = useState(() => getEquipmentById(id));
+  const [loadingItem, setLoadingItem] = useState(true);
+
+  // Video playback states
+  const [isVideoLoading, setIsVideoLoading] = useState(false);
+  const [videoPlaybackError, setVideoPlaybackError] = useState(false);
+  const videoPlayerRef = useRef(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadItem() {
+      setLoadingItem(true);
+      try {
+        const fetched = await equipmentService.fetchEquipmentById(id);
+        if (isMounted) {
+          if (fetched) {
+            setItem(fetched);
+          } else {
+            const fallback = getEquipmentById(id);
+            setItem(fallback || null);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed loading equipment from API:', err.message);
+        if (isMounted) {
+          const fallback = getEquipmentById(id);
+          setItem(fallback || null);
+        }
+      } finally {
+        if (isMounted) setLoadingItem(false);
+      }
+    }
+    loadItem();
+    return () => { isMounted = false; };
+  }, [id]);
+
+  // Reset video playback state when video source changes
+  useEffect(() => {
+    setVideoPlaybackError(false);
+    setIsVideoLoading(Boolean(item?.videoUrl || item?.video_url));
+  }, [item?.videoUrl, item?.video_url]);
 
   const gallery = useMemo(() => {
     if (!item) return [];
-    return item.galleryImages && item.galleryImages.length > 0 ? item.galleryImages : [item.imageUrl];
+    return item.galleryImages && item.galleryImages.length > 0 ? item.galleryImages : (item.imageUrl ? [item.imageUrl] : []);
   }, [item]);
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -64,6 +110,7 @@ export default function EquipmentDetails() {
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [startDate, setStartDate] = useState(getTomorrowStr);
   const [endDate, setEndDate] = useState(getFiveDaysLaterStr);
+  const [pickupPreference, setPickupPreference] = useState('self_pickup');
   const [seekerMessage, setSeekerMessage] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
 
@@ -87,8 +134,24 @@ export default function EquipmentDetails() {
 
   // Numeric database ID mapping
   const numericEquipmentId = useMemo(() => {
-    return parseInt(String(id).replace(/\D/g, ''), 10) || 1;
-  }, [id]);
+    if (item && item.id) {
+      const parsed = parseInt(String(item.id).replace(/\D/g, ''), 10);
+      if (!isNaN(parsed) && parsed > 0) return parsed;
+    }
+    const fromParam = parseInt(String(id).replace(/\D/g, ''), 10);
+    return !isNaN(fromParam) && fromParam > 0 ? fromParam : 1;
+  }, [id, item]);
+
+  // Check if current authenticated user owns this equipment
+  const isOwner = useMemo(() => {
+    if (!user || !item) return false;
+    const currentUserId = Number(user.id);
+    const itemOwnerId = Number(item.ownerId || item.owner_id);
+    return Boolean(currentUserId && itemOwnerId && currentUserId === itemOwnerId);
+  }, [user, item]);
+
+  // Check if current user is an equipment owner role
+  const isOwnerRole = Boolean(user && user.role === 'owner');
 
   // Load reviews and waitlist status
   useEffect(() => {
@@ -212,7 +275,8 @@ export default function EquipmentDetails() {
         equipmentId: numericEquipmentId,
         startDate,
         endDate,
-        seekerMessage
+        seekerMessage,
+        pickupPreference
       });
 
       if (res && res.success) {
@@ -237,7 +301,17 @@ export default function EquipmentDetails() {
   const unitPrice = item ? Number(item.price || 0) : 0;
   const estimatedTotal = unitPrice > 0 ? (durationDays * unitPrice).toFixed(2) : '0.00';
 
-  // If item does not exist, render clean 404 state
+  // Loading state while retrieving equipment from backend
+  if (loadingItem && !item) {
+    return (
+      <div className={`container ${styles.loadingContainer}`}>
+        <div className={styles.pageSpinner} />
+        <p style={{ marginTop: '1rem', color: 'var(--slate-600)', fontWeight: 600 }}>Loading equipment catalog record...</p>
+      </div>
+    );
+  }
+
+  // If item does not exist after loading completed, render clean 404 state
   if (!item) {
     return (
       <div className="container section" style={{ minHeight: '65vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -285,7 +359,7 @@ export default function EquipmentDetails() {
     createdAt
   } = item;
 
-  const isAvailable = availabilityStatus === 'available';
+  const isAvailable = String(availabilityStatus || '').toLowerCase() === 'available';
 
   const getConditionVariant = (cond) => {
     switch (cond) {
@@ -310,6 +384,26 @@ export default function EquipmentDetails() {
         </Link>
         <span className={styles.breadcrumbCategory}>Catalog / {category} / {name}</span>
       </div>
+
+      {item.isDemoRecord && (
+        <div style={{
+          background: '#fef3c7',
+          border: '1px solid #fde68a',
+          borderRadius: '8px',
+          padding: '0.65rem 1rem',
+          marginBottom: '1.25rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.6rem',
+          color: '#92400e',
+          fontSize: '0.84rem'
+        }}>
+          <Info size={18} style={{ flexShrink: 0 }} />
+          <span>
+            <strong>Illustrative Demonstration Listing:</strong> This is a sample record for platform preview. Live items listed by verified community partners reflect actual database inventory.
+          </span>
+        </div>
+      )}
 
       {/* Main Two-Column Layout */}
       <div className={styles.mainGrid}>
@@ -359,42 +453,147 @@ export default function EquipmentDetails() {
             </div>
           )}
 
+          {/* Equipment Video Demonstration Tour */}
+          <Card className={styles.videoTourCard}>
+            <CardBody>
+              <div className={styles.cardSectionHeader}>
+                <Video size={20} className={styles.sectionIcon} />
+                <h3 className={styles.sectionHeading}>Equipment Demonstration Video</h3>
+              </div>
+
+              {(item?.videoUrl || item?.video_url) ? (
+                <div>
+                  <div className={styles.videoPlayerContainer}>
+                    {isVideoLoading && !videoPlaybackError && (
+                      <div className={styles.videoLoadingOverlay}>
+                        <div className={styles.videoSpinner} />
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 600 }}>Loading video...</span>
+                      </div>
+                    )}
+
+                    {videoPlaybackError ? (
+                      <div className={styles.videoErrorCard}>
+                        <VideoOff size={32} color="#dc2626" style={{ marginBottom: '0.5rem' }} />
+                        <h4 className={styles.videoErrorTitle}>Demonstration Video Unavailable</h4>
+                        <p className={styles.videoErrorText}>
+                          The video stream could not be loaded or is in an unsupported format. You can still inspect the equipment photos or verify operational condition during in-person handover.
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={styles.retryVideoBtn}
+                          leftIcon={<RefreshCw size={14} />}
+                          onClick={() => {
+                            setVideoPlaybackError(false);
+                            setIsVideoLoading(true);
+                            if (videoPlayerRef.current) {
+                              videoPlayerRef.current.load();
+                            }
+                          }}
+                        >
+                          Retry Playback
+                        </Button>
+                      </div>
+                    ) : (
+                      <video
+                        ref={videoPlayerRef}
+                        src={item.videoUrl || item.video_url}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className={styles.detailVideoPlayer}
+                        onLoadStart={() => setIsVideoLoading(true)}
+                        onLoadedData={() => setIsVideoLoading(false)}
+                        onCanPlay={() => setIsVideoLoading(false)}
+                        onWaiting={() => setIsVideoLoading(true)}
+                        onError={() => {
+                          setIsVideoLoading(false);
+                          setVideoPlaybackError(true);
+                        }}
+                      >
+                        Your browser does not support HTML5 video playback.
+                      </video>
+                    )}
+                  </div>
+                  <p className={styles.videoNotice}>
+                    Operational demonstration video showing physical condition, folding mechanism, and functionality.
+                  </p>
+                </div>
+              ) : (
+                <div className={styles.noVideoCard}>
+                  <div className={styles.noVideoIconWrap}>
+                    <VideoOff size={28} />
+                  </div>
+                  <h4 className={styles.noVideoTitle}>No Demonstration Video Available</h4>
+                  <p className={styles.noVideoText}>
+                    The owner has not uploaded an operational walkthrough video for this listing.
+                    Physical condition and working mechanisms can still be verified through the photo gallery and checked during in-person handover.
+                  </p>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+
           {/* Inspection & Visual Verification Card */}
           <Card className={styles.conditionCard}>
             <CardBody>
               <div className={styles.cardSectionHeader}>
                 <ShieldCheck size={20} className={styles.sectionIcon} />
-                <h3 className={styles.sectionHeading}>Physical Inspection Verification</h3>
+                <h3 className={styles.sectionHeading}>Physical Inspection & Condition</h3>
               </div>
 
               <div className={styles.conditionSummaryRow}>
                 <div>
-                  <span className={styles.conditionLabel}>Overall Visual Condition:</span>
+                  <span className={styles.conditionLabel}>Owner-Reported Condition:</span>
                   <Badge variant={getConditionVariant(condition)}>
-                    {condition}
+                    {condition || 'Good'}
                   </Badge>
                 </div>
-                <div className={styles.ratingBox}>
-                  <Star size={16} fill="var(--amber-400)" color="var(--amber-500)" />
-                  <span className={styles.ratingVal}>{ownerRating}</span>
-                  <span className={styles.ratingCount}>({reviewCount} reviews)</span>
-                </div>
+                {ownerRating ? (
+                  <div className={styles.ratingBox}>
+                    <Star size={16} fill="var(--amber-400)" color="var(--amber-500)" />
+                    <span className={styles.ratingVal}>{ownerRating}</span>
+                    <span className={styles.ratingCount}>({reviewCount || 0} reviews)</span>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Clear definition of condition grade */}
+              <div className={styles.conditionDefinition}>
+                {condition === 'Good' && '• Good: Equipment is clean, fully operational, and exhibits minimal cosmetic signs of prior use.'}
+                {condition === 'Fair' && '• Fair: Equipment is fully functional with noticeable cosmetic wear, surface scratches, or minor blemishes.'}
+                {condition === 'Needs Inspection' && '• Needs Inspection: Equipment requires a thorough physical functionality check by borrower and owner prior to loan handover.'}
+                {(!condition || (condition !== 'Good' && condition !== 'Fair' && condition !== 'Needs Inspection')) &&
+                  '• Verified by equipment owner. Physical mechanisms should be tested together at loan handover.'}
               </div>
 
               <div className={styles.detailBlock}>
-                <h4 className={styles.blockTitle}>Visual Verification Notes</h4>
-                <p className={styles.blockText}>{conditionDetails}</p>
+                <h4 className={styles.blockTitle}>Owner Inspection Notes</h4>
+                {conditionDetails && conditionDetails.trim() && !conditionDetails.includes('Enter the results') ? (
+                  <p className={styles.blockText}>{conditionDetails}</p>
+                ) : (
+                  <p className={styles.emptyNoteText}>No inspection notes have been provided.</p>
+                )}
               </div>
 
-              {knownDamage && knownDamage !== 'None documented.' && (
-                <div className={styles.damageAlert}>
-                  <AlertCircle size={18} className={styles.damageIcon} />
-                  <div>
-                    <h5 className={styles.damageTitle}>Documented Cosmetic Wear</h5>
-                    <p className={styles.damageText}>{knownDamage}</p>
+              <div className={styles.detailBlock}>
+                <h4 className={styles.blockTitle}>Documented Cosmetic Wear & Damage</h4>
+                {knownDamage && knownDamage.trim() && knownDamage !== 'None documented.' && !knownDamage.includes('None documented') ? (
+                  <div className={styles.damageAlert}>
+                    <AlertCircle size={18} className={styles.damageIcon} />
+                    <div>
+                      <h5 className={styles.damageTitle}>Documented Cosmetic Wear</h5>
+                      <p className={styles.damageText}>{knownDamage}</p>
+                    </div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <p className={styles.emptyNoteText}>No cosmetic damage or blemishes documented by owner.</p>
+                )}
+              </div>
+
+              <p className={styles.conditionDisclaimer}>
+                Note: Condition details are reported by the listing owner. MediShare recommends completing a mutual physical check during handover.
+              </p>
 
               {/* Handover Verification Checklist */}
               {checklist && checklist.length > 0 && (
@@ -429,74 +628,125 @@ export default function EquipmentDetails() {
           </Card>
         </div>
 
-        {/* Right Column: Key Details & Booking Action */}
+        {/* Right Column: Hero Booking Card, Description & Partner Info */}
         <div className={styles.infoCol}>
-          <div className={styles.headerInfo}>
-            <span className={styles.categoryBadge}>{category}</span>
-            <h1 className={styles.productTitle}>{name}</h1>
-
-            <div className={styles.locationStrip}>
-              <MapPin size={16} className={styles.locationIcon} />
-              <span>{serviceArea}</span>
-            </div>
-
-            <div className={styles.pricingCard}>
-              <div className={styles.priceRow}>
-                <span className={styles.priceMain}>
-                  {price === 0 ? 'Free Community Lending' : `₹${price}`}
-                </span>
-                {price > 0 && <span className={styles.pricePeriod}>/ day</span>}
+          {/* Equipment Booking Hero Card */}
+          <div className={styles.bookingHeroCard}>
+            <div className={styles.heroCardHeader}>
+              <span className={styles.categoryBadge}>{category}</span>
+              <h1 className={styles.productTitle}>{name}</h1>
+              <div className={styles.locationStrip}>
+                <MapPin size={16} className={styles.locationIcon} />
+                <span>{serviceArea || 'Bangalore Urban & Rural Community'}</span>
               </div>
-              <p className={styles.pricingExplainer}>
-                {sharingType === 'free'
-                  ? 'Provided freely by community health cell for eligible rehabilitation needs.'
-                  : sharingType === 'rental'
-                  ? 'Subsidized community rental to cover equipment maintenance & sanitation.'
-                  : 'Permanent equipment donation for patients in documented financial need.'}
-              </p>
             </div>
 
-            {/* Description */}
-            <div className={styles.descriptionSection}>
-              <h3 className={styles.descHeading}>Equipment Overview</h3>
-              <p className={styles.descBody}>{description}</p>
-            </div>
-
-            {/* Verified Partner Card */}
-            <div className={styles.ownerCard}>
-              <div className={styles.ownerAvatar}>
-                <User size={20} />
+            <div className={styles.heroCardPricingRow}>
+              <div>
+                <div className={styles.priceRow}>
+                  <span className={styles.priceMain}>
+                    {price === 0 ? 'Free Community Lending' : `₹${price}`}
+                  </span>
+                  {price > 0 && <span className={styles.pricePeriod}>/ day</span>}
+                </div>
+                <p className={styles.pricingExplainer}>
+                  {sharingType === 'free'
+                    ? 'Provided freely by community health cell for eligible rehabilitation needs.'
+                    : sharingType === 'rental'
+                    ? 'Subsidized community rental to cover equipment maintenance & sanitation.'
+                    : 'Permanent equipment donation for patients in documented financial need.'}
+                </p>
               </div>
-              <div className={styles.ownerMeta}>
-                <div className={styles.ownerName}>{ownerName}</div>
-                <div className={styles.ownerRoleTag}>{ownerType}</div>
+              <div>
+                <Badge variant={isAvailable ? 'approved' : 'danger'} size="lg">
+                  {isAvailable ? 'Available Now' : (availabilityLabel || 'Currently On Loan')}
+                </Badge>
               </div>
-              <p className={styles.ownerDesc}>
-                Verified community equipment partner. Equipment condition logs and handover checklists are recorded at every exchange.
-              </p>
             </div>
 
-            {/* Action Buttons: Request Equipment or Waitlist */}
-            <div className={styles.actionSection}>
-              {isAvailable ? (
+            {/* Requested Borrowing Dates Preview */}
+            {isAvailable && (
+              <div
+                className={styles.bookingDatesPreview}
+                onClick={handleOpenRequestModal}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleOpenRequestModal(); }}
+              >
+                <div className={styles.datesPreviewContent}>
+                  <Calendar size={18} className={styles.datesPreviewIcon} />
+                  <div>
+                    <div className={styles.datesPreviewLabel}>Standard Loan Period Preview</div>
+                    <div className={styles.datesPreviewValue}>
+                      {new Date(startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} – {new Date(endDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} ({durationDays || 5} days)
+                    </div>
+                  </div>
+                </div>
+                <span className={styles.datesChangeHint}>Customize Dates →</span>
+              </div>
+            )}
+
+            {/* Hero Action Area */}
+            <div className={styles.heroActionArea}>
+              {isOwner ? (
+                <div className={styles.ownerNoticeBox}>
+                  <div>
+                    <strong>You are the owner of this listing</strong>
+                    <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#166534' }}>
+                      Owners cannot request their own equipment. You can manage bookings and inventory from your dashboard.
+                    </p>
+                  </div>
+                  <Link to="/owner/inventory" className={styles.ownerManageLink}>
+                    Owner Inventory →
+                  </Link>
+                </div>
+              ) : isOwnerRole ? (
+                <div className={styles.ownerNoticeBox} style={{ background: '#f8fafc', borderColor: '#cbd5e1', color: '#334155' }}>
+                  <div>
+                    <strong>Partner Account Active</strong>
+                    <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#64748b' }}>
+                      You are signed in as an Equipment Partner. Equipment loans are requested by Care Seeker accounts.
+                    </p>
+                  </div>
+                  <Link to="/owner/inventory" className={styles.ownerManageLink}>
+                    Partner Inventory →
+                  </Link>
+                </div>
+              ) : isAvailable ? (
                 <>
                   <Button
                     variant="primary"
                     size="lg"
                     fullWidth
+                    className={styles.requestToBorrowBtn}
+                    leftIcon={<CalendarPlus size={20} />}
                     onClick={handleOpenRequestModal}
                   >
-                    Request Equipment
+                    {sharingType === 'rental' ? 'Book This Equipment' : 'Request to Borrow'}
                   </Button>
-                  <p className={styles.actionSubtext}>
-                    Direct booking with real-time availability verification and partner handover coordination.
-                  </p>
+
+                  <div className={styles.bookingExplanation}>
+                    <div className={styles.explanationTitle}>What happens after submitting your request?</div>
+                    <ul className={styles.explanationList}>
+                      <li>The equipment partner reviews your loan dates and patient recovery need.</li>
+                      <li>Upon approval, you receive verified pickup instructions and contact details.</li>
+                      <li>Both parties complete a mutual physical condition checklist at handover.</li>
+                    </ul>
+                  </div>
+
+                  <div className={styles.trustMicrocopy}>
+                    <span>✓ Real-time availability verified</span>
+                    <span>•</span>
+                    <span>✓ No upfront deposit</span>
+                    <span>•</span>
+                    <span>✓ Mutual condition check</span>
+                  </div>
                 </>
               ) : (
-                <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '10px', border: '1px solid var(--slate-200)', marginTop: '0.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: '#b45309', fontWeight: 700, fontSize: '0.9375rem' }}>
+                <div>
+                  <div className={styles.onLoanBanner}>
                     <Clock size={18} />
-                    <span>Currently On Loan (Waitlist Open)</span>
+                    <span>Currently {availabilityLabel || 'On Loan (Waitlist Open)'}</span>
                   </div>
 
                   {waitlistMsg && (
@@ -533,9 +783,6 @@ export default function EquipmentDetails() {
                     </div>
                   ) : (
                     <div>
-                      <p style={{ fontSize: '0.8125rem', color: 'var(--slate-600)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
-                        Join the priority queue to receive an instant alert when this equipment returns from loan.
-                      </p>
                       <Button
                         variant="primary"
                         size="lg"
@@ -545,13 +792,79 @@ export default function EquipmentDetails() {
                       >
                         Join Priority Waitlist ({waitlistStatus?.total_in_queue || 0} waiting)
                       </Button>
+                      <p className={styles.waitlistExplainer}>
+                        You will receive an automatic notification the moment this equipment is returned and sanitized.
+                      </p>
                     </div>
                   )}
                 </div>
               )}
             </div>
           </div>
+
+          {/* Equipment Overview */}
+          <div className={styles.descriptionSection}>
+            <h3 className={styles.descHeading}>Equipment Overview</h3>
+            <p className={styles.descBody}>{description}</p>
+          </div>
+
+          {/* Verified Partner Card */}
+          <div className={styles.ownerCard}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div className={styles.ownerAvatar}>
+                <User size={20} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div className={styles.ownerMeta}>
+                  <span className={styles.ownerName}>{ownerName}</span>
+                  <span className={styles.ownerRoleTag}>{ownerType}</span>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)', marginTop: '0.15rem' }}>
+                  Verified MediShare Community Equipment Partner
+                </div>
+              </div>
+            </div>
+            <p className={styles.ownerDesc}>
+              Equipment condition logs, sanitization records, and handover checklists are verified at every exchange.
+            </p>
+          </div>
         </div>
+      </div>
+
+      {/* Mobile Sticky Booking Bar */}
+      <div className={styles.mobileStickyBar}>
+        <div className={styles.mobileStickyInfo}>
+          <div className={styles.mobileStickyPrice}>
+            {price === 0 ? 'Free' : `₹${price}/day`}
+          </div>
+          <div className={styles.mobileStickyAvailability}>
+            {isAvailable ? '• Available Now' : '• On Loan'}
+          </div>
+        </div>
+
+        {isOwner || isOwnerRole ? (
+          <Link to="/owner/inventory">
+            <Button variant="outline" size="sm">Partner Inventory</Button>
+          </Link>
+        ) : isAvailable ? (
+          <Button
+            variant="primary"
+            size="md"
+            leftIcon={<CalendarPlus size={16} />}
+            onClick={handleOpenRequestModal}
+          >
+            {sharingType === 'rental' ? 'Book Now' : 'Request to Borrow'}
+          </Button>
+        ) : (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleJoinWaitlist}
+            isLoading={isWaitlistLoading}
+          >
+            Join Waitlist
+          </Button>
+        )}
       </div>
 
       {/* ======================================================== */}
@@ -724,7 +1037,7 @@ export default function EquipmentDetails() {
               <Button variant="outline" onClick={() => setIsRequestModalOpen(false)}>
                 Cancel
               </Button>
-              <Link to="/login">
+              <Link to="/login" state={{ from: { pathname: `/equipment/${id}` } }}>
                 <Button variant="primary">
                   Sign In / Register
                 </Button>
@@ -859,6 +1172,29 @@ export default function EquipmentDetails() {
                   {unitPrice > 0 ? `₹${estimatedTotal}` : 'Free'}
                 </div>
               </div>
+            </div>
+
+            {/* Handover / Delivery Preference */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.4rem', color: 'var(--navy-900)' }}>
+                Handover Preference *
+              </label>
+              <select
+                value={pickupPreference}
+                onChange={(e) => setPickupPreference(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.65rem',
+                  borderRadius: '6px',
+                  border: '1px solid var(--slate-300)',
+                  fontSize: '0.875rem',
+                  backgroundColor: '#ffffff',
+                  color: 'var(--navy-900)'
+                }}
+              >
+                <option value="self_pickup">Self-Pickup at Owner Location (Recommended)</option>
+                <option value="delivery">Request Community Delivery Assistance (Subject to partner availability)</option>
+              </select>
             </div>
 
             {/* Intended Care Need / Patient Message */}

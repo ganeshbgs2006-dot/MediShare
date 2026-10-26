@@ -207,7 +207,26 @@ export const notificationService = {
     } catch (err) {
       console.error('[NOTIFICATION SERVICE] Error in notifyDisputeRecorded:', err.message);
     }
+  },
+
+  /**
+   * Generic user notification helper (dispatched for partner approvals, return videos, etc.)
+   */
+  async notifyUser(userId, { type, title, message, relatedEntityType, relatedEntityId }) {
+    try {
+      return await notificationModel.create({
+        userId,
+        type,
+        title,
+        message,
+        entityType: relatedEntityType || 'system',
+        entityId: relatedEntityId || null
+      });
+    } catch (err) {
+      console.error('[NOTIFICATION SERVICE] Error in notifyUser:', err.message);
+    }
   }
 };
 
 export default notificationService;
+

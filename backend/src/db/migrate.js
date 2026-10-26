@@ -47,15 +47,34 @@ async function runMigrations() {
     // 1. Users table enhancements
     await addCol('users', 'is_active', 'BOOLEAN NOT NULL DEFAULT 1 AFTER is_verified');
     await addCol('users', 'status_reason', 'VARCHAR(255) NULL AFTER is_active');
+    await addCol('users', 'approval_status', "ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'approved' AFTER is_active");
+    await addCol('users', 'approval_reason', 'VARCHAR(255) NULL AFTER approval_status');
+    await addCol('users', 'approved_by', 'INT NULL AFTER approval_reason');
+    await addCol('users', 'approved_at', 'TIMESTAMP NULL AFTER approved_by');
+
+    // Ensure any unverified owner accounts require administrator approval
+    await connection.query("UPDATE users SET approval_status = 'pending' WHERE role = 'owner' AND is_verified = 0");
 
     // 2. Equipment table enhancements
     await addCol('equipment', 'moderation_status', "ENUM('pending', 'approved', 'rejected', 'flagged') NOT NULL DEFAULT 'approved' AFTER availability_status");
     await addCol('equipment', 'moderation_reason', 'TEXT NULL AFTER moderation_status');
+    await addCol('equipment', 'video_url', 'VARCHAR(500) NULL AFTER image_url');
 
     // 3. Bookings table enhancements
     await addCol('bookings', 'seeker_message', 'TEXT NULL AFTER handover_notes');
     await addCol('bookings', 'rejection_reason', 'TEXT NULL AFTER seeker_message');
     await addCol('bookings', 'cancellation_reason', 'TEXT NULL AFTER rejection_reason');
+    await addCol('bookings', 'seeker_return_video_url', 'VARCHAR(500) NULL AFTER cancellation_reason');
+    await addCol('bookings', 'seeker_return_notes', 'TEXT NULL AFTER seeker_return_video_url');
+    await addCol('bookings', 'seeker_return_submitted_at', 'TIMESTAMP NULL AFTER seeker_return_notes');
+    await addCol('bookings', 'owner_return_video_url', 'VARCHAR(500) NULL AFTER seeker_return_submitted_at');
+    await addCol('bookings', 'owner_return_notes', 'TEXT NULL AFTER owner_return_video_url');
+    await addCol('bookings', 'owner_return_submitted_at', 'TIMESTAMP NULL AFTER owner_return_notes');
+    await addCol('bookings', 'return_status', "ENUM('none', 'seeker_submitted', 'owner_submitted', 'both_submitted', 'disputed', 'completed') NOT NULL DEFAULT 'none' AFTER owner_return_submitted_at");
+    await addCol('bookings', 'handover_condition_grade', "ENUM('Good', 'Fair', 'Needs Inspection') NULL AFTER return_status");
+    await addCol('bookings', 'return_condition_grade', "ENUM('Good', 'Fair', 'Needs Inspection') NULL AFTER handover_condition_grade");
+    await addCol('bookings', 'is_disputed', 'BOOLEAN NOT NULL DEFAULT 0 AFTER return_condition_grade');
+    await addCol('bookings', 'dispute_reason', 'TEXT NULL AFTER is_disputed');
 
     // 4. Audit logs table
     await connection.query(`
@@ -92,6 +111,16 @@ async function runMigrations() {
       console.log('[MIGRATE] Updated audit_logs entity_type ENUM.');
     } catch (e) {
       console.warn('[MIGRATE] audit_logs entity_type update notice:', e.message);
+    }
+
+    try {
+      await connection.query(`
+        ALTER TABLE notifications
+        MODIFY COLUMN entity_type ENUM('booking', 'equipment', 'review', 'waitlist', 'system', 'user') NOT NULL DEFAULT 'system';
+      `);
+      console.log('[MIGRATE] Updated notifications entity_type ENUM.');
+    } catch (e) {
+      console.warn('[MIGRATE] notifications entity_type update notice:', e.message);
     }
 
     // 6. Seed equipment if empty

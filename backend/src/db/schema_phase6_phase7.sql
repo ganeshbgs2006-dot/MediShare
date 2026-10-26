@@ -21,3 +21,4 @@ ALTER TABLE audit_logs
 ALTER TABLE reviews
   ADD COLUMN IF NOT EXISTS moderation_status ENUM('approved', 'flagged', 'hidden') NOT NULL DEFAULT 'approved' AFTER comment,
   ADD COLUMN IF NOT EXISTS moderation_reason TEXT NULL AFTER moderation_status;
+

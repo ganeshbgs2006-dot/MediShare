@@ -25,6 +25,8 @@ router.post('/reminders/run', adminController.runScheduledReminders);
 // User governance & suspension
 router.get('/users', adminController.listUsers);
 router.patch('/users/:id/status', adminController.updateUserStatus);
+router.get('/owners/pending', adminController.getPendingOwners);
+router.patch('/users/:id/approval', adminController.updateOwnerApproval);
 
 // Equipment moderation
 router.get('/equipment', adminController.listEquipment);

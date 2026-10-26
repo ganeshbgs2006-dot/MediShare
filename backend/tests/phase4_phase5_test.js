@@ -41,7 +41,8 @@ async function runTests() {
       `Found ${eqListData.equipment ? eqListData.equipment.length : 0} items`
     );
 
-    const firstEqId = eqListData.equipment[0].id;
+    const targetEq = eqListData.equipment.find(e => Number(e.owner_id) === 2) || eqListData.equipment[0];
+    const firstEqId = targetEq.id;
     const eqDetailRes = await fetch(`${BASE_URL}/equipment/${firstEqId}`);
     const eqDetailData = await eqDetailRes.json();
     assert(eqDetailRes.status === 200 && eqDetailData.success && eqDetailData.equipment.id === firstEqId,
@@ -177,6 +178,24 @@ async function runTests() {
     assert(handoverRes.status === 200 && handoverData.booking.status === 'active_loan',
       'Owner marked equipment handed over to seeker (status: active_loan)'
     );
+
+    // Submit return inspection videos (Mandatory dual return condition verification)
+    await fetch(`${BASE_URL}/bookings/${createdBooking.id}/return-inspection`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${seekerToken}`
+      },
+      body: JSON.stringify({ videoUrl: '/uploads/videos/return-seeker.webm', conditionGrade: 'Good' })
+    });
+    await fetch(`${BASE_URL}/bookings/${createdBooking.id}/return-inspection`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${ownerToken}`
+      },
+      body: JSON.stringify({ videoUrl: '/uploads/videos/return-owner.webm', conditionGrade: 'Good' })
+    });
 
     const returnRes = await fetch(`${BASE_URL}/bookings/${createdBooking.id}/status`, {
       method: 'PATCH',

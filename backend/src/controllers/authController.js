@@ -19,7 +19,10 @@ export const authController = {
         serviceArea
       } = req.body;
 
-      // 1. Check if user already exists
+      // 1. Force strict role boundary - public self-registration cannot create administrators
+      const sanitizedRole = role === 'owner' ? 'owner' : 'seeker';
+
+      // 2. Check if user already exists
       const existingUser = await userModel.findByEmail(email);
       if (existingUser) {
         return res.status(409).json({
@@ -28,22 +31,22 @@ export const authController = {
         });
       }
 
-      // 2. Hash password securely using bcrypt with 10 salt rounds
+      // 3. Hash password securely using bcrypt with 10 salt rounds
       const saltRounds = 10;
       const passwordHash = await bcrypt.hash(password, saltRounds);
 
-      // 3. Create user in database
+      // 4. Create user in database (Seekers start active; owners require admin verification)
       const newUser = await userModel.create({
         fullName,
         email,
         passwordHash,
         phone,
-        role,
-        organizationName,
-        serviceArea
+        role: sanitizedRole,
+        organizationName: sanitizedRole === 'owner' ? (organizationName || fullName) : null,
+        serviceArea: sanitizedRole === 'owner' ? serviceArea : null
       });
 
-      // 4. Generate signed JWT token
+      // 5. Generate signed JWT token
       const token = jwt.sign(
         {
           id: newUser.id,
@@ -54,11 +57,18 @@ export const authController = {
         { expiresIn: env.jwt.expiresIn }
       );
 
+      const message = sanitizedRole === 'owner'
+        ? 'Partner registration submitted successfully. Your account is currently pending administrator verification before equipment can be published.'
+        : 'Account created successfully.';
+
       return res.status(201).json({
         success: true,
-        message: 'Account created successfully.',
+        message,
         token,
-        user: newUser
+        user: {
+          ...newUser,
+          approvalStatus: newUser.approvalStatus
+        }
       });
     } catch (err) {
       next(err);
@@ -120,6 +130,8 @@ export const authController = {
         organizationName: user.organization_name,
         serviceArea: user.service_area,
         isVerified: Boolean(user.is_verified),
+        approvalStatus: user.approval_status || 'approved',
+        approvalReason: user.approval_reason,
         createdAt: user.created_at
       };
 
@@ -150,6 +162,8 @@ export const authController = {
         organizationName: user.organization_name,
         serviceArea: user.service_area,
         isVerified: Boolean(user.is_verified),
+        approvalStatus: user.approval_status || 'approved',
+        approvalReason: user.approval_reason,
         createdAt: user.created_at
       }
     });

@@ -4,7 +4,7 @@
  * status transitions (approved, active_loan, returned), and cancellations.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 async function request(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -45,10 +45,14 @@ export const bookingService = {
   /**
    * Submit a new equipment booking request (Seeker)
    */
-  async createBooking({ equipmentId, startDate, endDate, seekerMessage }) {
+  async createBooking({ equipmentId, startDate, endDate, seekerMessage, pickupPreference }) {
+    const combinedMessage = pickupPreference
+      ? `[Handover Preference: ${pickupPreference === 'delivery' ? 'Community Delivery Requested' : 'Self-Pickup'}]\n${seekerMessage || ''}`.trim()
+      : seekerMessage;
+
     return request('/bookings', {
       method: 'POST',
-      body: JSON.stringify({ equipmentId, startDate, endDate, seekerMessage })
+      body: JSON.stringify({ equipmentId, startDate, endDate, seekerMessage: combinedMessage })
     });
   },
 
@@ -115,6 +119,16 @@ export const bookingService = {
   async checkAvailability(equipmentId, startDate, endDate) {
     return request(`/equipment/${equipmentId}/availability?startDate=${startDate}&endDate=${endDate}`, {
       method: 'GET'
+    });
+  },
+
+  /**
+   * Submit return condition inspection video and verification (Seeker or Owner)
+   */
+  async submitReturnInspection(id, { videoUrl, notes, conditionGrade, isDisputed, disputeReason }) {
+    return request(`/bookings/${id}/return-inspection`, {
+      method: 'POST',
+      body: JSON.stringify({ videoUrl, notes, conditionGrade, isDisputed, disputeReason })
     });
   }
 };

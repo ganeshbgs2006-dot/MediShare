@@ -28,3 +28,4 @@ export function securityHeaders(req, res, next) {
 }
 
 export default securityHeaders;
+

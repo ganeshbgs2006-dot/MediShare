@@ -84,6 +84,14 @@ export default function AdminDashboard() {
   const [modalSubmitting, setModalSubmitting] = useState(false);
   const [modalError, setModalError] = useState(null);
 
+  // Partner Approval Modal State
+  const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+  const [selectedOwner, setSelectedOwner] = useState(null);
+  const [ownerApprovalStatus, setOwnerApprovalStatus] = useState('approved');
+  const [ownerApprovalReason, setOwnerApprovalReason] = useState('');
+  const [approvalSubmitting, setApprovalSubmitting] = useState(false);
+  const [approvalError, setApprovalError] = useState(null);
+
   // 1. Load Overview Metrics
   const loadMetrics = async (range = dateRange) => {
     setMetricsLoading(true);
@@ -252,6 +260,35 @@ export default function AdminDashboard() {
       alert(err.message || 'Failed to export CSV report.');
     } finally {
       setExportingType(null);
+    }
+  };
+
+  // Partner Approval Handlers
+  const handleOpenOwnerApprovalModal = (owner, status) => {
+    setSelectedOwner(owner);
+    setOwnerApprovalStatus(status);
+    setOwnerApprovalReason('');
+    setApprovalError(null);
+    setApprovalModalOpen(true);
+  };
+
+  const handleConfirmOwnerApproval = async () => {
+    if (!selectedOwner) return;
+    setApprovalSubmitting(true);
+    setApprovalError(null);
+    try {
+      await adminService.updateOwnerApproval(selectedOwner.id, {
+        approvalStatus: ownerApprovalStatus,
+        reason: ownerApprovalReason
+      });
+      setApprovalModalOpen(false);
+      loadQueues();
+      loadUsers();
+      loadMetrics(dateRange);
+    } catch (err) {
+      setApprovalError(err.message || 'Failed to update partner verification.');
+    } finally {
+      setApprovalSubmitting(false);
     }
   };
 
@@ -734,17 +771,94 @@ export default function AdminDashboard() {
 
                 <div className={styles.metricCard}>
                   <div className={styles.metricTop}>
-                    <div className={styles.metricLabel}>Flagged Reviews</div>
-                    <div className={styles.metricIconWrap} style={{ background: '#f8fafc', color: 'var(--slate-600)' }}>
-                      <MessageSquare size={22} />
+                    <div className={styles.metricLabel}>Pending Partners</div>
+                    <div className={styles.metricIconWrap} style={{ background: '#fef3c7', color: '#b45309' }}>
+                      <Users size={22} />
                     </div>
                   </div>
                   <div>
-                    <div className={styles.metricValue}>
-                      {queues.counts?.flaggedReviews || 0}
+                    <div className={styles.metricValue} style={{ color: '#b45309' }}>
+                      {queues.queues?.pendingOwners?.length || 0}
                     </div>
-                    <div className={styles.metricSubtext}>Reviews held for review</div>
+                    <div className={styles.metricSubtext}>Lenders awaiting vetting approval</div>
                   </div>
+                </div>
+              </div>
+
+              {/* Section 0: Equipment Partner Verification Applications */}
+              <div className={styles.tableCard} style={{ marginBottom: '2rem' }}>
+                <div className={styles.tableHeader}>
+                  <div>
+                    <h3 className={styles.tableTitle} style={{ color: '#0f766e', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <CheckCircle2 size={18} /> Equipment Partner Applications (Awaiting Review)
+                    </h3>
+                    <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--slate-500)' }}>
+                      New equipment owner accounts requiring administrator vetting before publishing marketplace listings.
+                    </p>
+                  </div>
+                </div>
+                <div className={styles.tableWrap}>
+                  {queues.queues?.pendingOwners && queues.queues.pendingOwners.length > 0 ? (
+                    <table className={styles.dataTable}>
+                      <thead>
+                        <tr>
+                          <th>Applicant Name</th>
+                          <th>Contact Details</th>
+                          <th>Organization</th>
+                          <th>Service Area</th>
+                          <th>Applied On</th>
+                          <th>Vetting Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {queues.queues.pendingOwners.map((owner) => (
+                          <tr key={owner.id}>
+                            <td>
+                              <strong>{owner.full_name}</strong>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)' }}>ID: #{owner.id}</div>
+                            </td>
+                            <td>
+                              <div>{owner.email}</div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)' }}>{owner.phone || 'No phone'}</div>
+                            </td>
+                            <td>
+                              <strong>{owner.organization_name || 'Individual Lender'}</strong>
+                            </td>
+                            <td>
+                              <span>{owner.service_area || 'Not specified'}</span>
+                            </td>
+                            <td>
+                              <span style={{ fontSize: '0.8125rem', color: 'var(--slate-500)' }}>
+                                {new Date(owner.created_at).toLocaleDateString()}
+                              </span>
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <Button
+                                  variant="primary"
+                                  size="sm"
+                                  onClick={() => handleOpenOwnerApprovalModal(owner, 'approved')}
+                                >
+                                  Approve
+                                </Button>
+                                <Button
+                                  variant="danger"
+                                  size="sm"
+                                  onClick={() => handleOpenOwnerApprovalModal(owner, 'rejected')}
+                                >
+                                  Reject
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#16a34a' }}>
+                      ✓ All equipment partner accounts have been reviewed. No pending applications.
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1122,6 +1236,16 @@ export default function AdminDashboard() {
                           <Badge variant={u.role === 'admin' ? 'info' : u.role === 'owner' ? 'approved' : 'neutral'}>
                             {u.role}
                           </Badge>
+                          {u.role === 'owner' && (
+                            <div style={{ marginTop: '0.25rem' }}>
+                              <Badge
+                                variant={u.approval_status === 'approved' ? 'approved' : u.approval_status === 'rejected' ? 'danger' : 'warning'}
+                                size="sm"
+                              >
+                                {u.approval_status || 'pending'}
+                              </Badge>
+                            </div>
+                          )}
                         </td>
                         <td>
                           <span className={`${styles.statusPill} ${u.is_active ? styles.statusActive : styles.statusSuspended}`}>
@@ -1141,24 +1265,47 @@ export default function AdminDashboard() {
                             <span style={{ fontSize: '0.75rem', color: 'var(--slate-400)', fontStyle: 'italic' }}>
                               Current Session
                             </span>
-                          ) : u.is_active ? (
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              leftIcon={<Lock size={12} />}
-                              onClick={() => handleOpenUserModal(u, false)}
-                            >
-                              Suspend
-                            </Button>
                           ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              leftIcon={<Unlock size={12} />}
-                              onClick={() => handleOpenUserModal(u, true)}
-                            >
-                              Reactivate
-                            </Button>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                              {u.is_active ? (
+                                <Button
+                                  variant="danger"
+                                  size="sm"
+                                  leftIcon={<Lock size={12} />}
+                                  onClick={() => handleOpenUserModal(u, false)}
+                                >
+                                  Suspend
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  leftIcon={<Unlock size={12} />}
+                                  onClick={() => handleOpenUserModal(u, true)}
+                                >
+                                  Reactivate
+                                </Button>
+                              )}
+
+                              {u.role === 'owner' && u.approval_status === 'pending' && (
+                                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={() => handleOpenOwnerApprovalModal(u, 'approved')}
+                                  >
+                                    Approve
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleOpenOwnerApprovalModal(u, 'rejected')}
+                                  >
+                                    Reject
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -1650,6 +1797,69 @@ export default function AdminDashboard() {
               isLoading={disputeSubmitting}
             >
               Record Resolution
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Partner Approval Modal */}
+      <Modal
+        isOpen={approvalModalOpen}
+        onClose={() => setApprovalModalOpen(false)}
+        title={ownerApprovalStatus === 'approved' ? 'Approve Equipment Partner' : 'Reject Partner Verification'}
+        maxWidth="500px"
+      >
+        <div>
+          <p style={{ color: 'var(--slate-600)', marginBottom: '1rem', lineHeight: 1.5 }}>
+            {ownerApprovalStatus === 'approved' ? (
+              <>
+                You are approving partner credentials for <strong>{selectedOwner?.full_name}</strong> ({selectedOwner?.organization_name || selectedOwner?.email}). Once approved, they will be permitted to publish and manage medical equipment listings in the marketplace.
+              </>
+            ) : (
+              <>
+                You are rejecting partner credentials for <strong>{selectedOwner?.full_name}</strong> ({selectedOwner?.organization_name || selectedOwner?.email}). Please provide an explanatory guidance reason below.
+              </>
+            )}
+          </p>
+
+          {approvalError && (
+            <div style={{ background: '#fef2f2', padding: '0.75rem', borderRadius: '8px', color: '#991b1b', marginBottom: '1rem' }}>
+              {approvalError}
+            </div>
+          )}
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem', color: 'var(--navy-900)' }}>
+              {ownerApprovalStatus === 'approved' ? 'Verification Notes / Terms (Optional)' : 'Rejection Reason (Required)'}
+            </label>
+            <textarea
+              rows={3}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                borderRadius: '8px',
+                border: '1px solid var(--slate-300)',
+                fontFamily: 'inherit',
+                fontSize: '0.875rem',
+                boxSizing: 'border-box'
+              }}
+              placeholder={ownerApprovalStatus === 'approved' ? 'e.g. Identity and NGO credentials verified.' : 'e.g. Incomplete organization documentation or invalid service area.'}
+              value={ownerApprovalReason}
+              onChange={(e) => setOwnerApprovalReason(e.target.value)}
+              required={ownerApprovalStatus === 'rejected'}
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+            <Button variant="outline" onClick={() => setApprovalModalOpen(false)} disabled={approvalSubmitting}>
+              Cancel
+            </Button>
+            <Button
+              variant={ownerApprovalStatus === 'rejected' ? 'danger' : 'primary'}
+              onClick={handleConfirmOwnerApproval}
+              isLoading={approvalSubmitting}
+            >
+              {ownerApprovalStatus === 'approved' ? 'Confirm Approval' : 'Confirm Rejection'}
             </Button>
           </div>
         </div>

@@ -12,13 +12,15 @@ import {
   ArrowRight,
   ShieldCheck,
   Package,
-  Star
+  Star,
+  Video
 } from 'lucide-react';
 import { bookingService } from '../../services/bookingService';
 import { reviewService } from '../../services/reviewService';
 import Button from '../../components/common/Button/Button';
 import Badge from '../../components/common/Badge/Badge';
 import Modal from '../../components/common/Modal/Modal';
+import ReturnInspectionModal from '../../components/ReturnInspectionModal/ReturnInspectionModal';
 import styles from './MyBookings.module.css';
 
 export default function MyBookings() {
@@ -42,6 +44,10 @@ export default function MyBookings() {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewError, setReviewError] = useState(null);
   const [reviewSuccess, setReviewSuccess] = useState(null);
+
+  // Return inspection video modal state
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [returnBooking, setReturnBooking] = useState(null);
 
   const fetchBookings = async () => {
     setIsLoading(true);
@@ -116,6 +122,11 @@ export default function MyBookings() {
     } finally {
       setIsSubmittingReview(false);
     }
+  };
+
+  const handleOpenReturnInspection = (booking) => {
+    setReturnBooking(booking);
+    setReturnModalOpen(true);
   };
 
   const getStatusBadge = (status) => {
@@ -290,6 +301,27 @@ export default function MyBookings() {
                       {booking.owner_phone && <span> • Contact: {booking.owner_phone}</span>}
                     </div>
                   )}
+
+                  {/* Return Video status banner for active loans */}
+                  {booking.status === 'active_loan' && (
+                    <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', padding: '0.625rem 0.875rem', borderRadius: '6px', fontSize: '0.8125rem', marginTop: '0.625rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <Video size={16} color="#0d9488" />
+                      <span>
+                        <strong>Dual Return Condition Verification:</strong>{' '}
+                        {booking.seeker_return_video_url ? (
+                          <span style={{ color: '#059669', fontWeight: 600 }}>Your return video recorded ✓</span>
+                        ) : (
+                          <span style={{ color: '#d97706', fontWeight: 600 }}>Your return video pending</span>
+                        )}
+                        {' • '}
+                        {booking.owner_return_video_url ? (
+                          <span style={{ color: '#059669', fontWeight: 600 }}>Owner video received ✓</span>
+                        ) : (
+                          <span style={{ color: '#64748b' }}>Owner video pending</span>
+                        )}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -299,6 +331,17 @@ export default function MyBookings() {
                     View Equipment Profile
                   </Button>
                 </Link>
+
+                {booking.status === 'active_loan' && (
+                  <Button
+                    variant={booking.seeker_return_video_url ? 'outline' : 'accent'}
+                    size="sm"
+                    onClick={() => handleOpenReturnInspection(booking)}
+                    leftIcon={<Video size={14} />}
+                  >
+                    {booking.seeker_return_video_url ? 'Update Return Video' : 'Record Return Video'}
+                  </Button>
+                )}
 
                 {booking.status === 'returned' && (
                   booking.review_id ? (
@@ -487,6 +530,15 @@ export default function MyBookings() {
           </div>
         </div>
       </Modal>
+
+      {/* Return Inspection Dual Video Modal */}
+      <ReturnInspectionModal
+        isOpen={returnModalOpen}
+        onClose={() => setReturnModalOpen(false)}
+        booking={returnBooking}
+        userRole="seeker"
+        onSubmitted={() => fetchBookings()}
+      />
     </div>
   );
 }

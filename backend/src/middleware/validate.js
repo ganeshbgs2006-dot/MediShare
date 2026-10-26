@@ -23,8 +23,8 @@ export function validateRegistration(req, res, next) {
     errors.push('Password must be at least 6 characters long.');
   }
 
-  if (role && !['seeker', 'owner', 'admin'].includes(role)) {
-    errors.push('Role must be one of: seeker, owner, admin.');
+  if (role && !['seeker', 'owner'].includes(role)) {
+    errors.push('Registration role must be either "seeker" or "owner". Administrator accounts cannot be self-registered.');
   }
 
   if (errors.length > 0) {

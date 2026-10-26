@@ -10,6 +10,8 @@ import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import MyBookings from './pages/Bookings/MyBookings';
 import OwnerBookings from './pages/Bookings/OwnerBookings';
+import OwnerInventory from './pages/Owner/OwnerInventory';
+import AddEquipment from './pages/Owner/AddEquipment';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import ProtectedRoute from './components/common/ProtectedRoute/ProtectedRoute';
 import Button from './components/common/Button/Button';
@@ -77,7 +79,23 @@ export default function App() {
               }
             />
 
-            {/* Phase 4 Protected Owner / Equipment Partner Routes */}
+            {/* Owner / Equipment Partner Routes */}
+            <Route
+              path="/owner/inventory"
+              element={
+                <ProtectedRoute allowedRoles={['owner', 'admin']}>
+                  <OwnerInventory />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/owner/add-equipment"
+              element={
+                <ProtectedRoute allowedRoles={['owner', 'admin']}>
+                  <AddEquipment />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/owner/bookings"
               element={

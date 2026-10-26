@@ -10,12 +10,14 @@ import {
   Truck,
   RotateCcw,
   AlertCircle,
-  Package
+  Package,
+  Video
 } from 'lucide-react';
 import { bookingService } from '../../services/bookingService';
 import Button from '../../components/common/Button/Button';
 import Badge from '../../components/common/Badge/Badge';
 import Modal from '../../components/common/Modal/Modal';
+import ReturnInspectionModal from '../../components/ReturnInspectionModal/ReturnInspectionModal';
 import styles from './OwnerBookings.module.css';
 
 export default function OwnerBookings() {
@@ -31,6 +33,10 @@ export default function OwnerBookings() {
   const [actionNotes, setActionNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState(null);
+
+  // Return Video Inspection Modal State
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [returnBooking, setReturnBooking] = useState(null);
 
   const fetchBookings = async () => {
     setIsLoading(true);
@@ -57,6 +63,11 @@ export default function OwnerBookings() {
     setActionNotes('');
     setActionError(null);
     setActionModalOpen(true);
+  };
+
+  const handleOpenReturnInspection = (booking) => {
+    setReturnBooking(booking);
+    setReturnModalOpen(true);
   };
 
   const handleConfirmAction = async () => {
@@ -260,6 +271,34 @@ export default function OwnerBookings() {
                       <strong>Your Handover Notes:</strong> {booking.handover_notes}
                     </div>
                   )}
+
+                  {/* Return Video status banner for active loans */}
+                  {booking.status === 'active_loan' && (
+                    <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.8125rem', marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Video size={16} color="#0d9488" />
+                        <strong style={{ color: '#134e4a' }}>Mandatory Dual Return Condition Verification:</strong>
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '0.25rem' }}>
+                        <span>
+                          Borrower Video:{' '}
+                          {booking.seeker_return_video_url ? (
+                            <span style={{ color: '#059669', fontWeight: 600 }}>Recorded & Uploaded ✓</span>
+                          ) : (
+                            <span style={{ color: '#d97706', fontWeight: 600 }}>Awaiting borrower recording</span>
+                          )}
+                        </span>
+                        <span>
+                          Your Video:{' '}
+                          {booking.owner_return_video_url ? (
+                            <span style={{ color: '#059669', fontWeight: 600 }}>Recorded & Uploaded ✓</span>
+                          ) : (
+                            <span style={{ color: '#d97706', fontWeight: 600 }}>Your recording required</span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -295,14 +334,28 @@ export default function OwnerBookings() {
                 )}
 
                 {booking.status === 'active_loan' && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    leftIcon={<RotateCcw size={15} />}
-                    onClick={() => handleOpenAction(booking, 'return')}
-                  >
-                    Confirm Safe Return (Complete)
-                  </Button>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <Button
+                      variant={booking.owner_return_video_url ? 'outline' : 'accent'}
+                      size="sm"
+                      leftIcon={<Video size={15} />}
+                      onClick={() => handleOpenReturnInspection(booking)}
+                    >
+                      {booking.owner_return_video_url ? 'Update Owner Video' : 'Record Owner Video'}
+                    </Button>
+
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      leftIcon={<RotateCcw size={15} />}
+                      disabled={!booking.seeker_return_video_url || !booking.owner_return_video_url}
+                      onClick={() => handleOpenAction(booking, 'return')}
+                    >
+                      {(!booking.seeker_return_video_url || !booking.owner_return_video_url)
+                        ? 'Confirm Return (Awaiting Videos)'
+                        : 'Confirm Safe Return (Complete)'}
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
@@ -409,6 +462,15 @@ export default function OwnerBookings() {
           </div>
         </div>
       </Modal>
+
+      {/* Owner Return Video Inspection Modal */}
+      <ReturnInspectionModal
+        isOpen={returnModalOpen}
+        onClose={() => setReturnModalOpen(false)}
+        booking={returnBooking}
+        userRole="owner"
+        onSubmitted={() => fetchBookings()}
+      />
     </div>
   );
 }

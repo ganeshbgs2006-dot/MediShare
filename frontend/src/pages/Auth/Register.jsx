@@ -80,7 +80,11 @@ export default function Register() {
     setIsSubmitting(false);
 
     if (result.success) {
-      navigate('/marketplace', { replace: true });
+      if (role === 'owner') {
+        navigate('/owner/inventory', { replace: true });
+      } else {
+        navigate('/marketplace', { replace: true });
+      }
     }
   };
 
@@ -134,6 +138,13 @@ export default function Register() {
                 </div>
               </button>
             </div>
+
+            {role === 'owner' && (
+              <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', padding: '0.625rem 0.875rem', borderRadius: '6px', fontSize: '0.8125rem', color: '#0f766e', marginBottom: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <ShieldCheck size={16} style={{ flexShrink: 0 }} />
+                <span>Partner accounts undergo verification to ensure community safety. Listings become public upon administrator approval.</span>
+              </div>
+            )}
 
             {/* Error Alert */}
             {displayError && (

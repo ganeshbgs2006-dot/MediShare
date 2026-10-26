@@ -32,3 +32,4 @@ EXPOSE 5000
 # Dumb-init ensures graceful SIGTERM/SIGINT shutdown handling
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["node", "src/server.js"]
+

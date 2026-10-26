@@ -260,13 +260,23 @@ export const adminController = {
       `;
       const flaggedReviews = await query(flaggedReviewsSql);
 
+      // 5. Pending Owner Applications
+      const pendingOwnersSql = `
+        SELECT id, full_name, email, phone, organization_name, service_area, created_at
+        FROM users
+        WHERE role = 'owner' AND approval_status = 'pending'
+        ORDER BY created_at ASC
+      `;
+      const pendingOwners = await query(pendingOwnersSql);
+
       return res.status(200).json({
         success: true,
         queues: {
           overdueReturns,
           openDisputes,
           pendingEquipment,
-          flaggedReviews
+          flaggedReviews,
+          pendingOwners
         }
       });
     } catch (err) {
@@ -792,6 +802,109 @@ export const adminController = {
         total,
         page: Number(page),
         limit: Number(limit)
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * List pending equipment owner applications awaiting administrator review
+   */
+  async getPendingOwners(req, res, next) {
+    try {
+      const { search = '', page = 1, limit = 50 } = req.query;
+      const offset = (Number(page) - 1) * Number(limit);
+
+      const owners = await userModel.listUsers({
+        role: 'owner',
+        approvalStatus: 'pending',
+        search,
+        limit: Number(limit),
+        offset
+      });
+
+      const total = await userModel.countUsers({
+        role: 'owner',
+        approvalStatus: 'pending',
+        search
+      });
+
+      return res.status(200).json({
+        success: true,
+        owners,
+        total,
+        page: Number(page),
+        limit: Number(limit)
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * Review and approve or reject an owner / partner application
+   */
+  async updateOwnerApproval(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { approvalStatus, reason } = req.body;
+
+      if (!['approved', 'rejected', 'pending'].includes(approvalStatus)) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid approvalStatus. Must be 'approved', 'rejected', or 'pending'."
+        });
+      }
+
+      const targetUser = await userModel.findById(id);
+      if (!targetUser) {
+        return res.status(404).json({ success: false, error: 'User account not found.' });
+      }
+
+      if (targetUser.role !== 'owner') {
+        return res.status(400).json({
+          success: false,
+          error: 'Only Equipment Owner accounts undergo partner verification.'
+        });
+      }
+
+      const updatedUser = await userModel.updateApprovalStatus(id, approvalStatus, {
+        reason: reason || null,
+        approvedBy: req.user.id
+      });
+
+      // Audit log
+      await auditLogModel.create({
+        adminId: req.user.id,
+        action: approvalStatus === 'approved' ? 'OWNER_APPROVED' : 'OWNER_REJECTED',
+        entityType: 'user',
+        entityId: id,
+        oldValue: { approval_status: targetUser.approval_status, approval_reason: targetUser.approval_reason },
+        newValue: { approval_status: approvalStatus, approval_reason: reason || null },
+        reason: reason || `Owner account verification set to ${approvalStatus}`,
+        ipAddress: req.ip
+      });
+
+      // In-app notification
+      try {
+        await notificationService.notifyUser(id, {
+          type: approvalStatus === 'approved' ? 'owner_approved' : 'owner_rejected',
+          title: approvalStatus === 'approved' ? 'Partner Account Approved!' : 'Partner Account Verification Update',
+          message: approvalStatus === 'approved'
+            ? 'Congratulations! Your equipment owner account has been approved by the platform team. You can now publish and manage medical equipment listings in the marketplace.'
+            : `Your equipment owner account verification was not approved: ${reason || 'Please contact platform administration for guidance.'}`,
+          relatedEntityType: 'user',
+          relatedEntityId: id
+        });
+      } catch (notifErr) {
+        console.error('[Admin] Failed to send approval notification:', notifErr.message);
+      }
+
+      return res.status(200).json({
+        success: true,
+        user: updatedUser,
+        message: `Owner account has been successfully ${approvalStatus}.`
       });
     } catch (err) {
       next(err);

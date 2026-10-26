@@ -99,6 +99,17 @@ export const bookingModel = {
         b.handover_notes,
         b.rejection_reason,
         b.cancellation_reason,
+        b.seeker_return_video_url,
+        b.seeker_return_notes,
+        b.seeker_return_submitted_at,
+        b.owner_return_video_url,
+        b.owner_return_notes,
+        b.owner_return_submitted_at,
+        b.return_status,
+        b.handover_condition_grade,
+        b.return_condition_grade,
+        b.is_disputed,
+        b.dispute_reason,
         b.created_at,
         b.updated_at,
         e.name AS equipment_name,
@@ -152,6 +163,17 @@ export const bookingModel = {
         b.handover_notes,
         b.rejection_reason,
         b.cancellation_reason,
+        b.seeker_return_video_url,
+        b.seeker_return_notes,
+        b.seeker_return_submitted_at,
+        b.owner_return_video_url,
+        b.owner_return_notes,
+        b.owner_return_submitted_at,
+        b.return_status,
+        b.handover_condition_grade,
+        b.return_condition_grade,
+        b.is_disputed,
+        b.dispute_reason,
         b.created_at,
         e.name AS equipment_name,
         e.category AS equipment_category,
@@ -202,6 +224,17 @@ export const bookingModel = {
         b.handover_notes,
         b.rejection_reason,
         b.cancellation_reason,
+        b.seeker_return_video_url,
+        b.seeker_return_notes,
+        b.seeker_return_submitted_at,
+        b.owner_return_video_url,
+        b.owner_return_notes,
+        b.owner_return_submitted_at,
+        b.return_status,
+        b.handover_condition_grade,
+        b.return_condition_grade,
+        b.is_disputed,
+        b.dispute_reason,
         b.created_at,
         e.name AS equipment_name,
         e.category AS equipment_category,
@@ -270,6 +303,17 @@ export const bookingModel = {
         b.seeker_message,
         b.rejection_reason,
         b.cancellation_reason,
+        b.seeker_return_video_url,
+        b.seeker_return_notes,
+        b.seeker_return_submitted_at,
+        b.owner_return_video_url,
+        b.owner_return_notes,
+        b.owner_return_submitted_at,
+        b.return_status,
+        b.handover_condition_grade,
+        b.return_condition_grade,
+        b.is_disputed,
+        b.dispute_reason,
         b.created_at,
         e.name AS equipment_name,
         e.category AS equipment_category,
@@ -322,6 +366,71 @@ export const bookingModel = {
 
     const rows = await query(sql, params);
     return rows[0].total;
+  },
+
+  /**
+   * Submit return condition inspection video and notes (Seeker or Owner)
+   */
+  async submitReturnInspection(id, { userRole, videoUrl, notes, conditionGrade, isDisputed = false, disputeReason = null }) {
+    const booking = await this.findById(id);
+    if (!booking) {
+      throw new Error('Booking not found');
+    }
+
+    if (userRole === 'seeker') {
+      const willHaveBoth = Boolean(booking.owner_return_video_url);
+      const newStatus = isDisputed ? 'disputed' : (willHaveBoth ? 'both_submitted' : 'seeker_submitted');
+      const sql = `
+        UPDATE bookings
+        SET 
+          seeker_return_video_url = ?,
+          seeker_return_notes = ?,
+          seeker_return_submitted_at = NOW(),
+          handover_condition_grade = ?,
+          return_status = ?,
+          is_disputed = CASE WHEN ? = 1 THEN 1 ELSE is_disputed END,
+          dispute_reason = CASE WHEN ? = 1 THEN ? ELSE dispute_reason END
+        WHERE id = ?
+      `;
+      await query(sql, [
+        videoUrl,
+        notes || null,
+        conditionGrade || 'Good',
+        newStatus,
+        isDisputed ? 1 : 0,
+        isDisputed ? 1 : 0,
+        disputeReason || null,
+        id
+      ]);
+    } else {
+      // Owner or Admin acting as owner
+      const willHaveBoth = Boolean(booking.seeker_return_video_url);
+      const newStatus = isDisputed ? 'disputed' : (willHaveBoth ? 'both_submitted' : 'owner_submitted');
+      const sql = `
+        UPDATE bookings
+        SET 
+          owner_return_video_url = ?,
+          owner_return_notes = ?,
+          owner_return_submitted_at = NOW(),
+          return_condition_grade = ?,
+          return_status = ?,
+          is_disputed = CASE WHEN ? = 1 THEN 1 ELSE is_disputed END,
+          dispute_reason = CASE WHEN ? = 1 THEN ? ELSE dispute_reason END
+        WHERE id = ?
+      `;
+      await query(sql, [
+        videoUrl,
+        notes || null,
+        conditionGrade || 'Good',
+        newStatus,
+        isDisputed ? 1 : 0,
+        isDisputed ? 1 : 0,
+        disputeReason || null,
+        id
+      ]);
+    }
+
+    return this.findById(id);
   }
 };
 

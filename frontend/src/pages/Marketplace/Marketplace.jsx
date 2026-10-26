@@ -22,7 +22,8 @@ import {
   getAvailabilityStatuses,
   getConditionOptions,
   getSortOptions,
-  filterAndSortEquipment
+  filterAndSortEquipment,
+  equipmentService
 } from '../../services/equipmentService';
 import styles from './Marketplace.module.css';
 
@@ -93,9 +94,37 @@ export default function Marketplace() {
   const conditionOptions = useMemo(() => getConditionOptions(), []);
   const sortOptions = useMemo(() => getSortOptions(), []);
 
+  // Database equipment state
+  const [catalogItems, setCatalogItems] = useState([]);
+  const [loadingCatalog, setLoadingCatalog] = useState(true);
+  const [isDemoData, setIsDemoData] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadCatalog() {
+      try {
+        const res = await equipmentService.fetchEquipment();
+        if (isMounted && res) {
+          if (Array.isArray(res.equipment)) {
+            setCatalogItems(res.equipment);
+            setIsDemoData(Boolean(res.isFallback));
+          }
+        }
+      } catch (e) {
+        console.warn('Failed loading marketplace catalog from API:', e.message);
+        if (isMounted) setIsDemoData(true);
+      } finally {
+        if (isMounted) setLoadingCatalog(false);
+      }
+    }
+    loadCatalog();
+    return () => { isMounted = false; };
+  }, []);
+
   // Filtered and sorted equipment dataset
   const filteredEquipment = useMemo(() => {
     return filterAndSortEquipment({
+      items: catalogItems,
       query: searchQuery,
       category: selectedCategory,
       sharingType: selectedSharingType,
@@ -103,7 +132,7 @@ export default function Marketplace() {
       condition: selectedCondition,
       sort: sortOption
     });
-  }, [searchQuery, selectedCategory, selectedSharingType, selectedAvailability, selectedCondition, sortOption]);
+  }, [catalogItems, searchQuery, selectedCategory, selectedSharingType, selectedAvailability, selectedCondition, sortOption]);
 
   // Check if any non-default filter is currently active
   const isFiltered = Boolean(
@@ -147,14 +176,6 @@ export default function Marketplace() {
             <p className={styles.pageSubtitle}>
               Browse assistive devices, wheelchairs, hospital beds, and recovery aids shared by verified local owners, clinics, and community members.
             </p>
-
-            {/* Transparency Notice */}
-            <div className={styles.demoNoticeCard} role="note">
-              <Info size={18} className={styles.demoNoticeIcon} aria-hidden="true" />
-              <div>
-                <strong>Platform Notice:</strong> Sample equipment listings, availability states, and partner profiles are shown for illustration.
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -397,8 +418,33 @@ export default function Marketplace() {
               )}
             </div>
 
+            {/* Conditional Platform Demonstration Notice (teal-and-white, compact) */}
+            {isDemoData && (
+              <div className={styles.subtleDemoNotice} role="note">
+                <Info size={16} className={styles.subtleDemoIcon} aria-hidden="true" />
+                <span>
+                  <strong>Platform Notice:</strong> Demonstration equipment listings are currently displayed. Real community listings will appear once connected to the live database.
+                </span>
+              </div>
+            )}
+
             {/* Equipment Grid or Empty State */}
-            {filteredEquipment.length > 0 ? (
+            {!loadingCatalog && catalogItems.length === 0 && !isDemoData ? (
+              <div className={styles.emptyStateCard} role="status">
+                <div className={styles.emptyIconWrap}>
+                  <PackageSearch size={40} className={styles.emptyIcon} aria-hidden="true" />
+                </div>
+                <h3 className={styles.emptyTitle}>No Equipment Listed Yet</h3>
+                <p className={styles.emptyDesc}>
+                  There are currently no medical equipment listings published in this network. Be the first partner to share equipment!
+                </p>
+                <div style={{ marginTop: '1.25rem' }}>
+                  <Link to="/owner/add-equipment">
+                    <Button variant="primary">Publish Equipment Listing</Button>
+                  </Link>
+                </div>
+              </div>
+            ) : filteredEquipment.length > 0 ? (
               <div className={styles.equipmentGrid}>
                 {filteredEquipment.map((item) => (
                   <EquipmentCard key={item.id} item={item} />

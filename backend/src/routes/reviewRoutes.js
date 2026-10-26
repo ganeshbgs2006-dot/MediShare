@@ -17,3 +17,4 @@ router.get('/admin/all', authenticateToken, authorizeRoles('admin'), reviewContr
 router.patch('/admin/:id/moderation', authenticateToken, authorizeRoles('admin'), reviewController.adminModerateReview);
 
 export default router;
+

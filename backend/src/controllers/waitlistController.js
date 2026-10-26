@@ -132,3 +132,4 @@ export const waitlistController = {
 };
 
 export default waitlistController;
+

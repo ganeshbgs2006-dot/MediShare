@@ -19,6 +19,7 @@ router.get('/owner', authorizeRoles('owner', 'admin'), bookingController.getOwne
 router.get('/:id', bookingController.getBookingById);
 router.patch('/:id/status', bookingController.updateStatus);
 router.patch('/:id/cancel', bookingController.cancelBooking);
+router.post('/:id/return-inspection', bookingController.submitReturnInspection);
 
 export default router;
 

@@ -28,11 +28,11 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Transparency notice for sample demonstration data */}
+      {/* Community Network Trust Bar */}
       <div className={styles.topNotice} role="region" aria-label="Platform Notice">
         <div className={styles.noticeContent}>
           <Info size={14} className={styles.noticeIcon} aria-hidden="true" />
-          <span>MediShare — Sample listings are shown for illustration.</span>
+          <span>MediShare — Community Medical Equipment & Assistive Devices Network</span>
         </div>
       </div>
 
@@ -71,13 +71,22 @@ export default function Navbar() {
             )}
 
             {isAuthenticated && (user?.role === 'owner' || user?.role === 'admin') && (
-              <Link
-                to="/owner/bookings"
-                className={`${styles.navLink} ${location.pathname === '/owner/bookings' ? styles.active : ''}`}
-              >
-                <Calendar size={16} />
-                <span>Partner Queue</span>
-              </Link>
+              <>
+                <Link
+                  to="/owner/inventory"
+                  className={`${styles.navLink} ${location.pathname.startsWith('/owner/inventory') ? styles.active : ''}`}
+                >
+                  <Layers size={16} />
+                  <span>Inventory</span>
+                </Link>
+                <Link
+                  to="/owner/bookings"
+                  className={`${styles.navLink} ${location.pathname === '/owner/bookings' ? styles.active : ''}`}
+                >
+                  <Calendar size={16} />
+                  <span>Loan Requests</span>
+                </Link>
+              </>
             )}
 
             {isAuthenticated && user?.role === 'admin' && (
@@ -114,7 +123,10 @@ export default function Navbar() {
                     </div>
                     <div className={styles.userMeta}>
                       <span className={styles.userName}>{user.fullName}</span>
-                      <span className={styles.userRoleTag}>{user.role}</span>
+                      <span className={styles.userRoleTag}>
+                        {user.role}
+                        {(user.approvalStatus === 'pending' || user.approval_status === 'pending') && ' (Pending)'}
+                      </span>
                     </div>
                   </div>
                   <Button
@@ -179,10 +191,16 @@ export default function Navbar() {
             )}
 
             {isAuthenticated && (user?.role === 'owner' || user?.role === 'admin') && (
-              <Link to="/owner/bookings" className={styles.mobileLink} onClick={closeMobileMenu}>
-                <Calendar size={18} />
-                <span>Partner Queue</span>
-              </Link>
+              <>
+                <Link to="/owner/inventory" className={styles.mobileLink} onClick={closeMobileMenu}>
+                  <Layers size={18} />
+                  <span>Equipment Inventory</span>
+                </Link>
+                <Link to="/owner/bookings" className={styles.mobileLink} onClick={closeMobileMenu}>
+                  <Calendar size={18} />
+                  <span>Loan Requests</span>
+                </Link>
+              </>
             )}
 
             {isAuthenticated && user?.role === 'admin' && (

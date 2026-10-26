@@ -4,7 +4,7 @@
  * equipment moderation, booking overrides, and administrative audit inspection.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 async function request(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -195,6 +195,30 @@ export const adminService = {
 
     return request(`/admin/audit-logs?${params.toString()}`, {
       method: 'GET'
+    });
+  },
+
+  /**
+   * List pending equipment owner applications awaiting admin review
+   */
+  async getPendingOwners({ search = '', page = 1, limit = 50 } = {}) {
+    const params = new URLSearchParams();
+    if (search && search.trim()) params.append('search', search.trim());
+    params.append('page', page);
+    params.append('limit', limit);
+
+    return request(`/admin/owners/pending?${params.toString()}`, {
+      method: 'GET'
+    });
+  },
+
+  /**
+   * Review and approve or reject an owner / partner account
+   */
+  async updateOwnerApproval(id, { approvalStatus, reason }) {
+    return request(`/admin/users/${id}/approval`, {
+      method: 'PATCH',
+      body: JSON.stringify({ approvalStatus, reason })
     });
   }
 };

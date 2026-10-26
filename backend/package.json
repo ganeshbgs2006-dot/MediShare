@@ -7,8 +7,11 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "test": "node tests/verify_audit_fixes.js && node tests/phase4_phase5_test.js && node tests/phase6_phase7_test.js && node tests/verify_seeker_booking_flow.js",
+    "test:audit": "node tests/verify_audit_fixes.js",
     "test:phase45": "node tests/phase4_phase5_test.js",
     "test:phase67": "node tests/phase6_phase7_test.js",
+    "test:booking": "node tests/verify_seeker_booking_flow.js",
     "db:migrate": "node src/db/migrate.js",
     "db:seed": "node src/db/seed.js"
   },
@@ -27,7 +30,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.5.0",
     "mysql2": "^3.11.3"
   }
 }
-

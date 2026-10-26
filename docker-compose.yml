@@ -76,3 +76,4 @@ volumes:
 networks:
   medishare-network:
     driver: bridge
+

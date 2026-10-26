@@ -206,3 +206,4 @@ When presenting MediShare to examiners or technical interviewers, highlight thes
    - *Answer*: When an administrator downloads user data or bookings into Microsoft Excel, any cell starting with `=`, `+`, or `-` can execute arbitrary operating system commands (DDE execution). MediShare sanitizes every exported text field by prefixing it with an apostrophe.
 4. **How are real-time notifications handled efficiently?**
    - *Answer*: Notifications are stored in a dedicated indexed MySQL table with read tracking, 60-second de-duplication, and polled by the React frontend bell component with unread count badges.
+

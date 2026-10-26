@@ -18,6 +18,10 @@ export const userModel = {
         is_verified, 
         is_active,
         status_reason,
+        approval_status,
+        approval_reason,
+        approved_by,
+        approved_at,
         created_at, 
         updated_at
       FROM users 
@@ -44,6 +48,10 @@ export const userModel = {
         is_verified, 
         is_active,
         status_reason,
+        approval_status,
+        approval_reason,
+        approved_by,
+        approved_at,
         created_at, 
         updated_at
       FROM users 
@@ -66,8 +74,10 @@ export const userModel = {
     organizationName = null,
     serviceArea = null
   }) {
-    // Admins and verified organizations can start verified, seekers start active
-    const isVerified = role === 'seeker' ? 1 : 0;
+    // Seekers start active & approved; owners require administrator approval
+    const isOwner = role === 'owner';
+    const isVerified = isOwner ? 0 : 1;
+    const approvalStatus = isOwner ? 'pending' : 'approved';
 
     const sql = `
       INSERT INTO users (
@@ -78,8 +88,9 @@ export const userModel = {
         role,
         organization_name,
         service_area,
-        is_verified
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        is_verified,
+        approval_status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const result = await query(sql, [
@@ -90,7 +101,8 @@ export const userModel = {
       role,
       organizationName ? organizationName.trim() : null,
       serviceArea ? serviceArea.trim() : null,
-      isVerified
+      isVerified,
+      approvalStatus
     ]);
 
     return {
@@ -101,17 +113,30 @@ export const userModel = {
       role,
       organizationName: organizationName ? organizationName.trim() : null,
       serviceArea: serviceArea ? serviceArea.trim() : null,
-      isVerified: Boolean(isVerified)
+      isVerified: Boolean(isVerified),
+      approvalStatus
     };
+  },
+
+  /**
+   * Update administrator approval status for an owner / partner account
+   */
+  async updateApprovalStatus(id, approvalStatus, { reason = null, approvedBy = null } = {}) {
+    const isVerified = approvalStatus === 'approved' ? 1 : 0;
+    const sql = `
+      UPDATE users 
+      SET approval_status = ?, approval_reason = ?, approved_by = ?, approved_at = NOW(), is_verified = ?
+      WHERE id = ?
+    `;
+    await query(sql, [approvalStatus, reason, approvedBy, isVerified, id]);
+    return this.findById(id);
   },
 
   /**
    * Verify an owner / partner account (Admin only)
    */
   async verifyOwner(id) {
-    const sql = `UPDATE users SET is_verified = 1 WHERE id = ?`;
-    await query(sql, [id]);
-    return this.findById(id);
+    return this.updateApprovalStatus(id, 'approved', { reason: 'Verified by system administrator.' });
   },
 
   /**
@@ -124,9 +149,9 @@ export const userModel = {
   },
 
   /**
-   * List users with search, role filtering, status filtering, and pagination for Admin Dashboard
+   * List users with search, role filtering, status filtering, approval filtering, and pagination
    */
-  async listUsers({ role = null, status = null, search = '', limit = 20, offset = 0 } = {}) {
+  async listUsers({ role = null, status = null, approvalStatus = null, search = '', limit = 20, offset = 0 } = {}) {
     const conditions = [];
     const params = [];
 
@@ -141,6 +166,11 @@ export const userModel = {
       } else if (status === 'suspended') {
         conditions.push('is_active = 0');
       }
+    }
+
+    if (approvalStatus && approvalStatus !== 'all') {
+      conditions.push('approval_status = ?');
+      params.push(approvalStatus);
     }
 
     if (search && search.trim()) {
@@ -162,6 +192,10 @@ export const userModel = {
         is_verified, 
         is_active,
         status_reason,
+        approval_status,
+        approval_reason,
+        approved_by,
+        approved_at,
         created_at, 
         updated_at
       FROM users
@@ -177,7 +211,7 @@ export const userModel = {
   /**
    * Count users matching filter conditions
    */
-  async countUsers({ role = null, status = null, search = '' } = {}) {
+  async countUsers({ role = null, status = null, approvalStatus = null, search = '' } = {}) {
     const conditions = [];
     const params = [];
 
@@ -194,6 +228,11 @@ export const userModel = {
       }
     }
 
+    if (approvalStatus && approvalStatus !== 'all') {
+      conditions.push('approval_status = ?');
+      params.push(approvalStatus);
+    }
+
     if (search && search.trim()) {
       conditions.push('(full_name LIKE ? OR email LIKE ? OR organization_name LIKE ?)');
       const pattern = `%${search.trim()}%`;
@@ -203,6 +242,15 @@ export const userModel = {
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     const sql = `SELECT COUNT(*) AS total FROM users ${whereClause}`;
     const rows = await query(sql, params);
+    return rows[0].total;
+  },
+
+  /**
+   * Count pending owner applications awaiting administrator review
+   */
+  async countPendingOwners() {
+    const sql = `SELECT COUNT(*) AS total FROM users WHERE role = 'owner' AND approval_status = 'pending'`;
+    const rows = await query(sql);
     return rows[0].total;
   },
 

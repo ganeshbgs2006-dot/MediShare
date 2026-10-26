@@ -22,3 +22,4 @@ router.delete('/:id', waitlistController.leaveWaitlist);
 router.delete('/equipment/:equipmentId', waitlistController.leaveByEquipment);
 
 export default router;
+

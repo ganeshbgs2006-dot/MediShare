@@ -7,6 +7,7 @@ import adminRoutes from './adminRoutes.js';
 import notificationRoutes from './notificationRoutes.js';
 import reviewRoutes from './reviewRoutes.js';
 import waitlistRoutes from './waitlistRoutes.js';
+import mediaRoutes from './mediaRoutes.js';
 
 const router = Router();
 
@@ -19,6 +20,7 @@ router.use('/notifications', notificationRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/waitlist', waitlistRoutes);
 router.use('/admin', adminRoutes);
+router.use('/media', mediaRoutes);
 
 // Base API index info
 router.get('/', (req, res) => {
